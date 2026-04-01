@@ -1,0 +1,2480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reasonable Compensation Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#0f172a;min-height:100vh;padding:1rem}
+.wrap{max-width:860px;margin:0 auto}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
+.app-title{font-size:16px;font-weight:700;color:#0f172a}
+.app-sub{font-size:12px;color:#64748b;margin-top:2px}
+.top-actions{display:flex;gap:8px;align-items:center}
+.btn-sm{font-size:12px;padding:7px 14px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;color:#0f172a}
+.btn-sm:hover{background:#f8fafc}
+.save-ind{font-size:11px;color:#94a3b8}
+.prog-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:0.75rem 1rem;margin-bottom:1rem}
+.pfill{height:3px;background:#1a4a8a;border-radius:2px;transition:width 0.3s;margin-bottom:0.75rem}
+.prog-bar{display:flex;align-items:center}
+.sdot{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer;position:relative}
+.sdot::after{content:'';position:absolute;top:13px;left:60%;width:80%;height:1px;background:#e2e8f0}
+.sdot:last-child::after{display:none}
+.dot{width:26px;height:26px;border-radius:50%;border:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#64748b;z-index:1;transition:all 0.2s}
+.dot.active{background:#1a4a8a;color:#fff;border-color:#1a4a8a}
+.dot.done{background:#166534;color:#fff;border-color:#166534}
+.slabel{font-size:9px;color:#64748b;text-align:center;line-height:1.2}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+.stitle{font-size:20px;font-weight:700;color:#0f172a;margin-bottom:4px}
+.ssub{font-size:13px;color:#64748b;line-height:1.6;margin-bottom:1.25rem}
+.inote{background:#f8fafc;border-left:3px solid #2563eb;border-radius:0 8px 8px 0;padding:0.75rem 1rem;margin-bottom:1.25rem;font-size:12px;color:#64748b;line-height:1.6}
+.inote strong{color:#0f172a;font-weight:600}
+.fg{margin-bottom:1.1rem}
+.fl{font-size:13px;font-weight:600;color:#0f172a;margin-bottom:4px}
+.fh{font-size:11px;color:#64748b;margin-bottom:5px;line-height:1.4}
+.fg input,.fg select,.fg textarea{width:100%;font-size:13px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#2563eb}
+.fg textarea{height:80px;resize:vertical}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.navb{display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;gap:12px}
+.bbk{font-size:13px;color:#64748b;background:#fff;border:1px solid #e2e8f0;padding:10px 20px;border-radius:8px;cursor:pointer}
+.bnx{font-size:13px;background:#1a4a8a;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600}
+.bnx:hover{background:#0f2744}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:1rem}
+.rc{border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;cursor:pointer;font-size:12px;color:#0f172a;display:flex;align-items:center;gap:8px;background:#fff;user-select:none;transition:all 0.15s}
+.rc:hover{border-color:#2563eb}
+.rc.sel{border-color:#2563eb;background:#eff6ff}
+.rck{width:16px;height:16px;border-radius:4px;border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.rc.sel .rck{background:#2563eb;border-color:#2563eb;color:#fff}
+.trow{display:grid;grid-template-columns:200px 1fr 56px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e2e8f0}
+.trow:last-child{border-bottom:none}
+.trn{font-size:13px;font-weight:600;color:#0f172a}
+.trb{font-size:11px;color:#64748b}
+.trp{font-size:19px;font-weight:700;text-align:right;color:#1a4a8a}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:#cbd5e1;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1a4a8a;cursor:pointer}
+.totbar{background:#f8fafc;border-radius:8px;padding:0.85rem 1rem;display:flex;justify-content:space-between;align-items:center;margin-top:1rem;border:1px solid #e2e8f0}
+.totn{font-size:24px;font-weight:700}
+.over{color:#dc2626}.ok{color:#16a34a}.under{color:#d97706}
+.btbl{width:100%;font-size:12px;border-collapse:collapse}
+.btbl th{text-align:left;font-size:11px;font-weight:600;color:#64748b;padding:8px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.btbl td{padding:8px 10px;border-bottom:1px solid #e2e8f0;color:#0f172a;vertical-align:middle}
+.btbl tr:last-child td{border-bottom:none}
+.chi{background:#eff6ff;border:1px solid #2563eb;border-radius:12px;padding:1.25rem;text-align:center;margin:1rem 0}
+.cha{font-size:40px;font-weight:700;color:#0f2744}
+.chl{font-size:12px;color:#1a4a8a;margin-top:4px}
+.ss{margin-bottom:1.1rem;padding-bottom:1.1rem;border-bottom:1px solid #e2e8f0}
+.ss:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.st{font-size:10px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.07em}
+.sr{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.sv{font-weight:600;color:#0f172a}
+.bdg{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;margin-left:4px}
+.birs{background:#fef3c7;color:#78350f}
+.tg{background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tw{background:#fef3c7;color:#78350f;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tr{background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.blsp{border:1px solid #e2e8f0;border-radius:8px;padding:1rem;margin-top:1rem}
+.blsh{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem}
+.blst{font-size:13px;font-weight:600;color:#0f172a}
+.blss{font-size:11px;color:#64748b}
+.blsb{font-size:12px;padding:8px 16px;background:#1a4a8a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:500}
+.blsb:hover{background:#0f2744}
+.blsakr{display:flex;gap:8px;align-items:center;margin-bottom:0.75rem}
+.blsakr input{flex:1;font-size:12px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;outline:none}
+.blsakr input:focus{border-color:#2563eb}
+.blsr-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #e2e8f0;font-size:12px}
+.blsr-row:last-child{border-bottom:none}
+.blson{flex:1;color:#0f172a;font-weight:500}
+.blsw{display:flex;gap:16px}
+.blswi{text-align:center;min-width:64px}
+.blswv{font-weight:700;font-size:13px;color:#0f172a}
+.blswl{font-size:10px;color:#64748b}
+.blserr{background:#fee2e2;color:#991b1b;padding:0.85rem;border-radius:8px;font-size:12px;margin-top:0.5rem;line-height:1.6}
+.crr{display:flex;gap:8px;margin-bottom:8px}
+.crr input{flex:1;font-size:12px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;outline:none}
+.addb{font-size:12px;padding:0 16px;height:38px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;color:#0f172a;white-space:nowrap}
+.pcts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.pco{border:1px solid #e2e8f0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.15s}
+.pco:hover{border-color:#2563eb}
+.pco.act{border-color:#2563eb;background:#eff6ff}
+.pcot{font-size:12px;font-weight:700;color:#0f172a;margin-bottom:3px}
+.pcod{font-size:11px;color:#64748b;line-height:1.4}
+.pdfb{font-size:13px;background:#0f2744;color:#fff;border:none;padding:11px 22px;border-radius:8px;cursor:pointer;font-weight:700}
+.pdfb:hover{background:#1a4a8a}
+.pdfb:disabled{opacity:0.6;cursor:not-allowed}
+.sl{color:#2563eb;text-decoration:none;font-size:11px}
+.calcbox{background:#f8fafc;border-radius:8px;padding:1rem;font-size:13px;margin-top:0.75rem}
+.reqlist{background:#f8fafc;border-radius:8px;padding:1rem;font-size:12px;color:#64748b;line-height:2;margin-top:0.75rem}
+.toast{position:fixed;bottom:24px;right:24px;background:#166534;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999}
+.toast.on{opacity:1}
+.sw{animation:fi 0.2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(max-width:560px){.r2,.pcts{grid-template-columns:1fr}.trow{grid-template-columns:1fr 120px 44px}}
+</style>
+</head>
+<body>
+<div id="toast" class="toast">Saved</div>
+<div class="wrap">
+  <div class="top-bar">
+    <div>
+      <div class="app-title">Reasonable Compensation Builder</div>
+      <div class="app-sub">IRS facts-and-circumstances standard | Multi-role weighted analysis</div>
+    </div>
+    <div class="top-actions">
+      <span class="save-ind" id="sind">Auto-saves as you type</span>
+      <button class="btn-sm" onclick="saveData()">Save</button>
+      <button class="btn-sm" onclick="clearData()">New report</button>
+    </div>
+  </div>
+  <div class="prog-wrap">
+    <div class="pfill" id="pfill" style="width:14%"></div>
+    <div class="prog-bar" id="pbar"></div>
+  </div>
+  <div id="sc"></div>
+</div>
+
+<script>
+var STEPS = ['Business','Roles','Time','Background','Market Data','Calculate','Report'];
+var STEP_IDS = ['business','roles','time','quals','market','calc','report'];
+
+var ROLES = [
+  {id:'tax_prep',  label:'Tax Preparation',        bls:'Tax Preparers',       occ:'13-2082', ml:52000, mm:68000,  mh:98000},
+  {id:'tax_review',label:'Tax Review / QC',         bls:'Tax Managers',        occ:'11-3031', ml:80000, mm:105000, mh:145000},
+  {id:'tax_plan',  label:'Tax Planning / Advisory', bls:'Financial Managers',  occ:'11-3031', ml:90000, mm:118000, mh:160000},
+  {id:'client',    label:'Client Relationship Mgmt',bls:'Financial Advisors',  occ:'13-2052', ml:75000, mm:100000, mh:138000},
+  {id:'sales',     label:'Sales / Business Dev',    bls:'Sales Managers',      occ:'11-2022', ml:72000, mm:105000, mh:148000},
+  {id:'staff',     label:'Staff Supervision',       bls:'General Managers',    occ:'11-1021', ml:78000, mm:110000, mh:155000},
+  {id:'admin',     label:'Admin / Operations',      bls:'Office Managers',     occ:'11-1021', ml:45000, mm:60000,  mh:82000},
+  {id:'book',      label:'Bookkeeping',             bls:'Bookkeepers',         occ:'43-3031', ml:40000, mm:52000,  mh:72000},
+  {id:'ceo',       label:'Executive / CEO',         bls:'Top Executives',      occ:'11-1011', ml:90000, mm:130000, mh:200000},
+  {id:'mktg',      label:'Marketing',               bls:'Marketing Managers',  occ:'11-2021', ml:65000, mm:88000,  mh:128000},
+  {id:'it',        label:'IT / Technology',         bls:'IT Managers',         occ:'11-3021', ml:78000, mm:108000, mh:150000},
+  {id:'legal',     label:'Legal / Compliance',      bls:'Compliance Officers', occ:'13-1041', ml:70000, mm:95000,  mh:135000},
+  {id:'ops',       label:'Production / Operations', bls:'Operations Managers', occ:'11-1021', ml:72000, mm:98000,  mh:140000},
+  {id:'med',       label:'Clinical / Medical',      bls:'Physicians',          occ:'29-1228', ml:150000,mm:220000, mh:320000},
+  {id:'eng',       label:'Engineering / Technical', bls:'Engineers',           occ:'17-2141', ml:85000, mm:115000, mh:160000},
+  {id:'cre',       label:'Creative / Design',       bls:'Art Directors',       occ:'27-1011', ml:58000, mm:78000,  mh:115000}
+];
+
+// Industry-specific role ordering: always include the 10 core roles,
+// then prepend up to 6 industry-specific roles to fill the top 16
+var CORE_ROLE_IDS = ['sales','ceo','ops','staff','mktg','admin','it','client','book','cre'];
+
+var INDUSTRY_ROLE_PRIORITY = {
+  'Accounting / Tax Services':    ['tax_prep','tax_review','tax_plan','legal','eng','cre'],
+  'Legal':                        ['legal','tax_plan','client','eng','cre','it'],
+  'Medical / Dental':             ['med','ops','legal','eng','it','cre'],
+  'Real Estate':                  ['client','legal','ops','mktg','eng','cre'],
+  'Construction':                 ['eng','ops','legal','it','cre','tax_prep'],
+  'Restaurant / Food Service':    ['ops','legal','mktg','it','cre','book'],
+  'Retail':                       ['ops','mktg','legal','it','cre','eng'],
+  'Technology / Software':        ['eng','it','ops','legal','mktg','cre'],
+  'Manufacturing':                ['eng','ops','legal','it','mktg','cre'],
+  'Financial Services':           ['tax_plan','legal','client','ops','eng','cre'],
+  'Consulting':                   ['tax_plan','legal','client','eng','it','cre'],
+  'Marketing / PR':               ['mktg','cre','client','it','ops','legal'],
+  'Transportation / Logistics':   ['ops','eng','legal','it','mktg','cre'],
+  'Healthcare Services':          ['med','ops','legal','eng','it','cre'],
+  'Agriculture / Farming':        ['ops','eng','staff','legal','book','sales'],
+  'Auto Services / Repair':       ['eng','ops','client','staff','sales','book'],
+  'Business / Professional Services': ['client','ops','sales','staff','legal','book'],
+  'Childcare / Education':        ['med','ops','staff','admin','legal','client'],
+  'Home Services / Repair':       ['eng','ops','client','sales','staff','book'],
+  'Landscaping / Gardening':      ['ops','eng','staff','client','sales','book'],
+  'Personal Services (Salons / Spas)': ['ops','client','staff','mktg','book','cre'],
+  'Wholesale / Distribution':     ['ops','sales','staff','book','legal','it'],
+  'Other':                        ['ops','legal','eng','it','mktg','cre']
+};
+
+// Industry-specific role label overrides — same role, different name for context
+var INDUSTRY_ROLE_LABELS = {
+  'Restaurant / Food Service': {
+    'ops':   'Kitchen / Food Production',
+    'admin': 'Restaurant Admin / Scheduling',
+    'mktg':  'Marketing / Social Media',
+    'ceo':   'Owner / General Manager',
+    'staff': 'Staff Supervision / Training',
+    'book':  'Bookkeeping / Cash Management',
+    'client':'Guest Experience / Hospitality',
+    'sales': 'Catering / Events Sales',
+    'it':    'POS / Technology Systems',
+    'cre':   'Menu Design / Branding'
+  },
+  'Medical / Dental': {
+    'med':   'Clinical / Patient Care',
+    'ops':   'Practice Operations',
+    'admin': 'Medical Admin / Billing',
+    'staff': 'Clinical Staff Supervision',
+    'client':'Patient Relationship Mgmt',
+    'legal': 'Compliance / HIPAA',
+    'mktg':  'Patient Marketing',
+    'ceo':   'Practice Owner / Director',
+    'book':  'Medical Billing / Collections',
+    'it':    'EHR / Technology Systems'
+  },
+  'Real Estate': {
+    'client':'Client Relationship Mgmt',
+    'sales': 'Sales / Transactions',
+    'ops':   'Transaction Coordination',
+    'admin': 'Office Admin / Compliance',
+    'mktg':  'Marketing / Listings',
+    'legal': 'Contract / Legal Review',
+    'ceo':   'Broker / Owner',
+    'staff': 'Agent Supervision',
+    'book':  'Bookkeeping / Trust Accounting',
+    'cre':   'Photography / Visual Marketing'
+  },
+  'Construction': {
+    'eng':   'Project Management / Engineering',
+    'ops':   'Field Operations / Foreman',
+    'sales': 'Estimating / Sales',
+    'admin': 'Office Admin / Permits',
+    'staff': 'Crew Supervision',
+    'legal': 'Contract / Compliance',
+    'ceo':   'Owner / General Contractor',
+    'book':  'Job Costing / Bookkeeping',
+    'mktg':  'Marketing / Bids',
+    'it':    'Technology / Software'
+  },
+  'Technology / Software': {
+    'eng':   'Software Development',
+    'it':    'IT / Infrastructure',
+    'ops':   'Product / Project Management',
+    'sales': 'Sales / Business Dev',
+    'mktg':  'Marketing / Growth',
+    'client':'Customer Success',
+    'ceo':   'CEO / Founder',
+    'staff': 'Team Leadership',
+    'legal': 'Legal / Compliance',
+    'book':  'Finance / Bookkeeping'
+  },
+  'Agriculture / Farming': {
+    'ops':   'Farm / Ranch Operations',
+    'eng':   'Equipment / Infrastructure',
+    'staff': 'Labor / Crew Supervision',
+    'legal': 'Regulatory / Environmental Compliance',
+    'book':  'Farm Accounting / Cost Tracking',
+    'sales': 'Crop / Livestock Sales',
+    'ceo':   'Farm Owner / Operator',
+    'admin': 'Administrative / Record Keeping',
+    'mktg':  'Direct Sales / Farmers Market',
+    'it':    'Precision Ag / Technology'
+  },
+  'Auto Services / Repair': {
+    'eng':   'Technical / Diagnostic Work',
+    'ops':   'Shop Operations / Workflow',
+    'client':'Customer Service / Estimates',
+    'staff': 'Technician Supervision',
+    'sales': 'Parts / Service Sales',
+    'book':  'Invoicing / Bookkeeping',
+    'ceo':   'Shop Owner / Manager',
+    'admin': 'Scheduling / Office Admin',
+    'mktg':  'Marketing / Reputation Mgmt',
+    'legal': 'Licensing / Safety Compliance'
+  },
+  'Business / Professional Services': {
+    'client':'Client Service / Account Mgmt',
+    'ops':   'Service Delivery / Operations',
+    'sales': 'Business Development',
+    'staff': 'Staff Supervision',
+    'legal': 'Contracts / Compliance',
+    'book':  'Finance / Bookkeeping',
+    'ceo':   'Owner / Principal',
+    'admin': 'Office Administration',
+    'mktg':  'Marketing / Brand Development',
+    'it':    'Technology / Systems'
+  },
+  'Childcare / Education': {
+    'med':   'Direct Care / Instruction',
+    'ops':   'Program / Facility Operations',
+    'staff': 'Teacher / Staff Supervision',
+    'admin': 'Enrollment / Administrative',
+    'legal': 'Licensing / Compliance',
+    'client':'Family / Parent Relations',
+    'ceo':   'Director / Owner',
+    'mktg':  'Marketing / Enrollment',
+    'book':  'Tuition Billing / Finance',
+    'it':    'Learning Technology / Systems'
+  },
+  'Home Services / Repair': {
+    'eng':   'Trade Work / Technical Services',
+    'ops':   'Job Scheduling / Operations',
+    'client':'Customer Relations / Estimates',
+    'sales': 'Sales / Proposals',
+    'staff': 'Crew Supervision',
+    'book':  'Invoicing / Bookkeeping',
+    'ceo':   'Owner / Operator',
+    'admin': 'Office Admin / Dispatch',
+    'mktg':  'Marketing / Reviews',
+    'legal': 'Licensing / Compliance'
+  },
+  'Landscaping / Gardening': {
+    'ops':   'Field Operations / Crew Management',
+    'eng':   'Landscape Design / Installation',
+    'staff': 'Crew Leadership',
+    'client':'Client Relations / Walkthroughs',
+    'sales': 'Sales / Proposals',
+    'book':  'Job Costing / Bookkeeping',
+    'ceo':   'Owner / Operator',
+    'admin': 'Scheduling / Office Admin',
+    'mktg':  'Marketing / Referrals',
+    'it':    'Estimating Software / Technology'
+  },
+  'Personal Services (Salons / Spas)': {
+    'ops':   'Salon / Spa Operations',
+    'client':'Client Service / Retention',
+    'staff': 'Stylist / Therapist Supervision',
+    'mktg':  'Marketing / Social Media',
+    'book':  'Bookkeeping / Cash Management',
+    'cre':   'Brand / Visual Marketing',
+    'ceo':   'Owner / Salon Director',
+    'sales': 'Retail / Upsell Sales',
+    'admin': 'Scheduling / Admin',
+    'it':    'Booking Systems / Technology'
+  },
+  'Wholesale / Distribution': {
+    'ops':   'Warehouse / Distribution Operations',
+    'sales': 'Sales / Account Management',
+    'staff': 'Operations / Warehouse Supervision',
+    'book':  'AR / AP / Bookkeeping',
+    'legal': 'Contracts / Compliance',
+    'it':    'Inventory Systems / ERP',
+    'ceo':   'Owner / President',
+    'admin': 'Office Administration',
+    'mktg':  'Marketing / Catalog',
+    'client':'Customer / Vendor Relations'
+  }
+};
+
+function getRoleLabel(roleId, industry) {
+  var labels = INDUSTRY_ROLE_LABELS[industry];
+  if (labels && labels[roleId]) return labels[roleId];
+  for (var i = 0; i < ROLES.length; i++) {
+    if (ROLES[i].id === roleId) return ROLES[i].label;
+  }
+  return roleId;
+}
+
+function getIndustryRoles(industry) {
+  var specific = INDUSTRY_ROLE_PRIORITY[industry] || INDUSTRY_ROLE_PRIORITY['Other'];
+  // Combine: industry-specific first (up to 6), then core roles, deduplicated
+  var combined = [];
+  var seen = {};
+  var addRole = function(id) {
+    if (!seen[id]) { seen[id] = true; combined.push(id); }
+  };
+  specific.forEach(addRole);
+  CORE_ROLE_IDS.forEach(addRole);
+  return combined.slice(0, 16);
+}
+
+var GEO = {
+  'Albuquerque, NM':0.90,'Anchorage, AK':1.05,'Atlanta, GA':1.00,'Austin, TX':1.05,
+  'Baltimore, MD':1.10,'Baton Rouge, LA':0.90,'Birmingham, AL':0.90,'Boise, ID':0.95,
+  'Boston, MA':1.22,'Buffalo, NY':0.95,'Charleston, SC':0.92,'Charlotte, NC':0.96,
+  'Chicago, IL':1.08,'Cincinnati, OH':0.93,'Cleveland, OH':0.95,'Colorado Springs, CO':0.97,
+  'Columbia, SC':0.90,'Columbus, OH':0.95,'Dallas, TX':1.02,'Dayton, OH':0.92,
+  'Denver, CO':1.05,'Des Moines, IA':0.95,'Detroit, MI':1.00,'El Paso, TX':0.87,
+  'Fresno, CA':0.95,'Greenville, SC':0.90,'Hartford, CT':1.12,'Honolulu, HI':1.15,
+  'Houston, TX':1.02,'Indianapolis, IN':0.95,'Jacksonville, FL':0.93,'Kansas City, MO':0.95,
+  'Knoxville, TN':0.90,'Las Vegas, NV':0.98,'Little Rock, AR':0.88,'Los Angeles, CA':1.20,
+  'Louisville, KY':0.92,'Madison, WI':1.00,'Memphis, TN':0.90,'Miami, FL':1.05,
+  'Milwaukee, WI':0.98,'Minneapolis, MN':1.10,'Nashville, TN':0.95,'New Orleans, LA':0.93,
+  'New York, NY':1.38,'Oklahoma City, OK':0.90,'Omaha, NE':0.93,'Orlando, FL':0.97,
+  'Philadelphia, PA':1.12,'Phoenix, AZ':0.97,'Pittsburgh, PA':0.95,'Portland, OR':1.15,
+  'Providence, RI':1.05,'Raleigh, NC':1.02,'Richmond, VA':1.00,'Riverside, CA':0.98,
+  'Sacramento, CA':1.05,'Salt Lake City, UT':1.00,'San Antonio, TX':0.93,'San Diego, CA':1.18,
+  'San Francisco, CA':1.42,'San Jose, CA':1.40,'Seattle, WA':1.25,'Spokane, WA':0.92,
+  'St. Louis, MO':0.95,'Tampa, FL':0.95,'Tucson, AZ':0.92,'Tulsa, OK':0.88,
+  'Virginia Beach, VA':0.97,'Washington, DC':1.18,'Wichita, KS':0.88,
+  'National Average':1.00,'Rural / Small Town':0.85,'Custom Location':null
+};
+var EXP = {
+  '0-5 years':0.80,'6-10 years':0.90,'11-15 years':1.00,'16-20 years':1.10,'21+ years':1.20
+};
+var PCT = {p25:0.82, p50:1.00, p75:1.18, p90:1.35};
+var AREAS = {
+  'Albuquerque, NM':'0010740','Anchorage, AK':'0011260','Atlanta, GA':'0012060',
+  'Austin, TX':'0012420','Baltimore, MD':'0012580','Baton Rouge, LA':'0012940',
+  'Birmingham, AL':'0013820','Boise, ID':'0014260','Boston, MA':'0070750',
+  'Buffalo, NY':'0015380','Charleston, SC':'0016700','Charlotte, NC':'0016740',
+  'Chicago, IL':'0016980','Cincinnati, OH':'0017140','Cleveland, OH':'0017460',
+  'Colorado Springs, CO':'0017820','Columbus, OH':'0018140','Dallas, TX':'0019100',
+  'Dayton, OH':'0019380','Denver, CO':'0019740','Des Moines, IA':'0019780',
+  'Detroit, MI':'0019820','El Paso, TX':'0021340','Fresno, CA':'0023420',
+  'Greenville, SC':'0024860','Hartford, CT':'0025540','Honolulu, HI':'0026180',
+  'Houston, TX':'0026420','Indianapolis, IN':'0026900','Jacksonville, FL':'0027260',
+  'Kansas City, MO':'0028140','Knoxville, TN':'0028940','Las Vegas, NV':'0029820',
+  'Little Rock, AR':'0030780','Los Angeles, CA':'0031084','Louisville, KY':'0031140',
+  'Madison, WI':'0031540','Memphis, TN':'0032820','Miami, FL':'0033100',
+  'Milwaukee, WI':'0033340','Minneapolis, MN':'0033460','Nashville, TN':'0034980',
+  'New Orleans, LA':'0035380','New York, NY':'0035614','Oklahoma City, OK':'0036420',
+  'Omaha, NE':'0036540','Orlando, FL':'0036740','Philadelphia, PA':'0037980',
+  'Phoenix, AZ':'0038060','Pittsburgh, PA':'0038300','Portland, OR':'0038900',
+  'Providence, RI':'0039300','Raleigh, NC':'0039580','Richmond, VA':'0040060',
+  'Riverside, CA':'0040140','Sacramento, CA':'0040900','Salt Lake City, UT':'0041620',
+  'San Antonio, TX':'0041700','San Diego, CA':'0041740','San Francisco, CA':'0041884',
+  'San Jose, CA':'0041940','Seattle, WA':'0042660','Spokane, WA':'0044060',
+  'St. Louis, MO':'0041180','Tampa, FL':'0045300','Tucson, AZ':'0046060',
+  'Tulsa, OK':'0046140','Virginia Beach, VA':'0047260','Washington, DC':'0047900',
+  'Wichita, KS':'0048620'
+};
+var PCTL = {p25:'25th percentile', p50:'50th percentile (median)', p75:'75th percentile', p90:'90th percentile'};
+var INDUSTRIES = [
+  'Accounting / Tax Services','Agriculture / Farming','Auto Services / Repair',
+  'Business / Professional Services','Childcare / Education','Consulting','Construction',
+  'Financial Services','Healthcare Services','Home Services / Repair',
+  'Landscaping / Gardening','Legal','Manufacturing','Marketing / PR',
+  'Medical / Dental','Personal Services (Salons / Spas)','Real Estate',
+  'Restaurant / Food Service','Retail','Technology / Software',
+  'Transportation / Logistics','Wholesale / Distribution','Other'
+];
+var INDUSTRY_TIME_EXAMPLE = {
+  'Accounting / Tax Services':         'An owner spending 70% on client advisory work is benchmarked very differently than one who spends 70% preparing returns or managing staff.',
+  'Agriculture / Farming':             'An owner spending 70% operating equipment and working the land is benchmarked differently than one who spends 60% managing operations, employees, and vendor relationships.',
+  'Auto Services / Repair':            'An owner spending 70% doing hands-on diagnostics and repairs is benchmarked differently than one who spends 60% managing the shop, customer relationships, and staff.',
+  'Business / Professional Services':  'An owner spending 70% on direct client delivery is benchmarked differently than one who spends 60% managing staff, business development, and operations.',
+  'Childcare / Education':             'An owner spending 70% in direct instruction or caregiving is benchmarked differently than one who spends 60% overseeing staff, curriculum, and compliance.',
+  'Consulting':                        'An owner spending 80% on billable client engagements is benchmarked differently than one who spends 60% on business development and managing junior consultants.',
+  'Construction':                      'An owner spending 70% doing skilled field work is benchmarked differently than one who spends 60% on project management, estimating, and client relationships.',
+  'Financial Services':                'An owner spending 70% on client-facing planning and investment work is benchmarked differently than one who spends 60% on compliance oversight and firm management.',
+  'Healthcare Services':               'An owner spending 70% on direct patient care is benchmarked differently than one who spends 60% managing the practice, billing, and clinical staff.',
+  'Home Services / Repair':            'An owner spending 70% doing hands-on service calls is benchmarked differently than one who spends 60% managing crews, scheduling, and customer relationships.',
+  'Landscaping / Gardening':           'An owner spending 70% working in the field is benchmarked differently than one who spends 60% managing crews, estimating jobs, and handling client accounts.',
+  'Legal':                             'An owner spending 70% on billable client legal work is benchmarked differently than one who spends 50% managing the firm and handling business development.',
+  'Manufacturing':                     'An owner spending 60% on the production floor is benchmarked differently than one who spends 60% managing operations, supply chain, quality, and staff.',
+  'Marketing / PR':                    'An owner spending 70% executing client deliverables and strategy is benchmarked differently than one who spends 60% managing accounts, teams, and new business.',
+  'Medical / Dental':                  'An owner spending 70% treating patients is benchmarked differently than one who spends 60% managing the practice, compliance requirements, and clinical staff.',
+  'Personal Services (Salons / Spas)': 'An owner spending 70% providing services to clients is benchmarked differently than one who spends 60% managing staff, scheduling, and the overall client experience.',
+  'Real Estate':                       'An owner spending 70% on active client transactions is benchmarked differently than one who spends 60% managing agents, listings, and brokerage operations.',
+  'Restaurant / Food Service':         'An owner spending 60% cooking or working the floor is benchmarked differently than one who spends 60% managing staff, vendors, and daily operations.',
+  'Retail':                            'An owner spending 60% in direct customer-facing sales is benchmarked differently than one who spends 60% managing inventory, staff, and vendor relationships.',
+  'Technology / Software':             'An owner spending 70% writing and reviewing code is benchmarked differently than one who spends 60% managing projects, clients, and a development team.',
+  'Transportation / Logistics':        'An owner spending 60% driving or dispatching is benchmarked differently than one who spends 60% managing fleet operations, compliance, and client accounts.',
+  'Wholesale / Distribution':          'An owner spending 60% on warehouse and fulfillment operations is benchmarked differently than one who spends 60% managing sales accounts and vendor relationships.',
+  'Other':                             'The mix of duties and the time spent in each is a key IRS factor. An owner spending 70% in high-skill technical work is benchmarked very differently than one spending 70% in management or administrative roles.'
+};
+var ENTITIES = ['S-Corporation','C-Corporation'];
+var EDUS = ["High school / GED","Associate&#39;s degree","Bachelor&#39;s degree","Master&#39;s degree","JD / Law degree","MBA","PhD / Doctorate","MD / Medical degree","Other professional degree"];
+var BOBS = ['Yes - most revenue depends on the owner personally','Shared - revenue is generated by multiple owners or team members','No - the business generates revenue independently of my direct involvement'];
+
+var cur = 0;
+var stmr = null;
+var d = defaultData();
+
+function defaultData() {
+  return {
+    biz: {name:'', industry:'', entity:'', revenue:'', employees:'', location:'', taxyear:'2026'},
+    roles: {sel:[], custom:[]},
+    time: {},
+    quals: {edu:'', creds:'', exp:'', spec:'', sup:'0', hrs:'', wks:'', bob:'Yes - most revenue depends on the owner personally', rep:''},
+    mkt: {pct:'', rat:'', bls:{}},
+    comp: {w2:'', dist:''}
+  };
+}
+
+function loadSaved() {
+  try {
+    var s = localStorage.getItem('rcb_v3');
+    if (s) {
+      var p = JSON.parse(s);
+      if (p && p.biz) {
+        d = p;
+        var sc = localStorage.getItem('rcb_step3');
+        if (sc) cur = parseInt(sc) || 0;
+        toast('Session restored');
+        return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
+
+function saveData(silent) {
+  try {
+    localStorage.setItem('rcb_v3', JSON.stringify(d));
+    localStorage.setItem('rcb_step3', String(cur));
+    if (!silent) toast('Saved');
+    var el = document.getElementById('sind');
+    if (el) el.textContent = 'Saved ' + new Date().toLocaleTimeString();
+  } catch(e) {}
+}
+
+function clearData() {
+  if (confirm('Start a new report? Current data will be cleared.')) {
+    localStorage.removeItem('rcb_v3');
+    localStorage.removeItem('rcb_step3');
+    d = defaultData();
+    cur = 0;
+    render();
+  }
+}
+
+function as() {
+  var navEl = document.querySelector('.navb');
+  if (navEl) navEl.outerHTML = navBtns();
+  clearTimeout(stmr);
+  stmr = setTimeout(function() { saveData(true); }, 1500);
+}
+
+function toast(msg) {
+  var t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('on');
+  setTimeout(function() { t.classList.remove('on'); }, 2400);
+}
+
+function allRoles() {
+  return d.roles.sel.concat(d.roles.custom);
+}
+
+function totPct() {
+  var ar = allRoles();
+  var sum = 0;
+  for (var i = 0; i < ar.length; i++) sum += parseFloat(d.time[ar[i]]) || 0;
+  return sum;
+}
+
+function getRole(id) {
+  for (var i = 0; i < ROLES.length; i++) { if (ROLES[i].id === id) return ROLES[i]; }
+  return null;
+}
+
+function calcComp() {
+  var ar = allRoles();
+  if (!ar.length) return 0;
+  var g = getGeoAdj();
+  var e = EXP[d.quals.exp] || 1;
+  var p = PCT[d.mkt.pct] || 1;
+  var w = 0;
+  for (var i = 0; i < ar.length; i++) {
+    var rid = ar[i];
+    var r = getRole(rid);
+    var base = r ? r.mm : 85000;
+    var bk = (r ? r.occ : '') + '_' + d.biz.location;
+    if (d.mkt.bls && d.mkt.bls[bk] && d.mkt.bls[bk].med) base = d.mkt.bls[bk].med;
+    w += base * ((parseFloat(d.time[rid]) || 0) / 100);
+  }
+  var hrs = parseFloat(d.quals.hrs) || 40;
+  var ha = hrs < 40 ? Math.min(hrs / 40, 1) : 1;
+  var marketComp = Math.round(w * g * p * ha);
+
+  // Net profit affordability cap
+  var netProfit = parseInt((d.biz.netprofit || '0').replace(/\D/g,'')) || 0;
+  if (netProfit > 0) {
+    // Standard: reasonable comp = lesser of market rate or 70% of net profit
+    var affordable = Math.round(netProfit * 0.70);
+    return Math.min(marketComp, affordable);
+  }
+  return marketComp;
+}
+
+function marketComp() {
+  var ar = allRoles();
+  if (!ar.length) return 0;
+  var g = getGeoAdj();
+  var e = EXP[d.quals.exp] || 1;
+  var p = PCT[d.mkt.pct] || 1;
+  var w = 0;
+  for (var i = 0; i < ar.length; i++) {
+    var rid = ar[i];
+    var r = getRole(rid);
+    var base = r ? r.mm : 85000;
+    var bk = (r ? r.occ : '') + '_' + d.biz.location;
+    if (d.mkt.bls && d.mkt.bls[bk] && d.mkt.bls[bk].med) base = d.mkt.bls[bk].med;
+    w += base * ((parseFloat(d.time[rid]) || 0) / 100);
+  }
+  var hrs = parseFloat(d.quals.hrs) || 40;
+  var ha = hrs < 40 ? Math.min(hrs / 40, 1) : 1;
+  return Math.round(w * g * p * ha);
+}
+
+function fm(n) { return '$' + Math.round(n).toLocaleString(); }
+
+function makeSelect(currentVal, opts, onchangeCode, placeholder) {
+  var amber = (placeholder && !currentVal) ? ' style="border-color:#f59e0b;background:#fffbeb"' : '';
+  var html = '<select' + amber + ' onchange="' + onchangeCode + '">';
+  if (placeholder) {
+    html += '<option value=""' + (!currentVal ? ' selected' : '') + '>' + placeholder + '</option>';
+  }
+  for (var i = 0; i < opts.length; i++) {
+    var selected = opts[i] === currentVal ? ' selected' : '';
+    html += '<option' + selected + '>' + opts[i] + '</option>';
+  }
+  html += '</select>';
+  return html;
+}
+
+function getGeoAdj() {
+  if (!d.biz.location) return 1;
+  if (d.biz.location === 'Custom Location') {
+    return parseFloat(d.biz.geoAdj) || 1.00;
+  }
+  return GEO[d.biz.location] || 1;
+}
+
+function getLocationLabel() {
+  if (d.biz.location === 'Custom Location') {
+    return d.biz.customCity ? d.biz.customCity + ' (custom)' : 'Custom Location';
+  }
+  return d.biz.location || '';
+}
+
+function makeGeoSelect() {
+  var isCustom = d.biz.location === 'Custom Location';
+  var amber = !d.biz.location ? ' style="border-color:#f59e0b;background:#fffbeb"' : '';
+  var html = '<select' + amber + ' onchange="d.biz.location=this.value;as()">';
+  html += '<option value=""' + (!d.biz.location ? ' selected' : '') + '>-- Select geographic market --</option>';
+
+  var stateGroups = {
+    'Alabama':       ['Birmingham'],
+    'Alaska':        ['Anchorage'],
+    'Arizona':       ['Phoenix', 'Tucson'],
+    'Arkansas':      ['Little Rock'],
+    'California':    ['Fresno', 'Los Angeles', 'Riverside', 'Sacramento', 'San Diego', 'San Francisco', 'San Jose'],
+    'Colorado':      ['Colorado Springs', 'Denver'],
+    'Connecticut':   ['Hartford'],
+    'DC / Metro':    ['Washington, DC'],
+    'Florida':       ['Jacksonville', 'Miami', 'Orlando', 'Tampa'],
+    'Georgia':       ['Atlanta'],
+    'Hawaii':        ['Honolulu'],
+    'Idaho':         ['Boise'],
+    'Illinois':      ['Chicago'],
+    'Indiana':       ['Indianapolis'],
+    'Iowa':          ['Des Moines'],
+    'Kansas':        ['Wichita'],
+    'Kentucky':      ['Louisville'],
+    'Louisiana':     ['Baton Rouge', 'New Orleans'],
+    'Maryland':      ['Baltimore'],
+    'Massachusetts': ['Boston'],
+    'Michigan':      ['Detroit'],
+    'Minnesota':     ['Minneapolis'],
+    'Missouri':      ['Kansas City', 'St. Louis'],
+    'Nebraska':      ['Omaha'],
+    'Nevada':        ['Las Vegas'],
+    'New Mexico':    ['Albuquerque'],
+    'New York':      ['Buffalo', 'New York'],
+    'North Carolina':['Charlotte', 'Raleigh'],
+    'Ohio':          ['Cincinnati', 'Cleveland', 'Columbus', 'Dayton'],
+    'Oklahoma':      ['Oklahoma City', 'Tulsa'],
+    'Oregon':        ['Portland'],
+    'Pennsylvania':  ['Philadelphia', 'Pittsburgh'],
+    'Rhode Island':  ['Providence'],
+    'South Carolina':['Charleston', 'Columbia', 'Greenville'],
+    'Tennessee':     ['Knoxville', 'Memphis', 'Nashville'],
+    'Texas':         ['Dallas', 'El Paso', 'Houston', 'San Antonio'],
+    'Utah':          ['Salt Lake City'],
+    'Virginia':      ['Richmond', 'Virginia Beach'],
+    'Washington':    ['Seattle', 'Spokane'],
+    'Wisconsin':     ['Madison', 'Milwaukee']
+  };
+
+  var stateKeys = Object.keys(stateGroups);
+  for (var si = 0; si < stateKeys.length; si++) {
+    var stateName = stateKeys[si];
+    var cities = stateGroups[stateName];
+    html += '<optgroup label="' + stateName + '">';
+    for (var ci = 0; ci < cities.length; ci++) {
+      var cityKey = cities[ci] + ', ' + (stateName === 'DC / Metro' ? '' : stateName.substring(0,2).toUpperCase());
+      // Match exact keys in GEO
+      var geoKeys = Object.keys(GEO);
+      var matched = '';
+      for (var gi = 0; gi < geoKeys.length; gi++) {
+        if (geoKeys[gi].indexOf(cities[ci]) === 0) { matched = geoKeys[gi]; break; }
+      }
+      if (!matched) matched = cityKey;
+      var sel = matched === d.biz.location ? ' selected' : '';
+      html += '<option value="' + matched + '"' + sel + '>' + cities[ci] + '</option>';
+    }
+    html += '</optgroup>';
+  }
+
+  html += '<optgroup label="---">';
+  html += '<option value="National Average"' + ('National Average' === d.biz.location ? ' selected' : '') + '>National Average</option>';
+  html += '<option value="Rural / Small Town"' + ('Rural / Small Town' === d.biz.location ? ' selected' : '') + '>Rural / Small Town</option>';
+  html += '<option value="Custom Location"' + (isCustom ? ' selected' : '') + '>Custom Location (enter manually)</option>';
+  html += '</optgroup>';
+  html += '</select>';
+  if (isCustom) {
+    html += '<div style="margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px">';
+    html += '<div style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:4px">City / metro name</div>';
+    html += '<input type="text" value="' + (d.biz.customCity||'') + '" oninput="d.biz.customCity=this.value;as()" placeholder="e.g. Bozeman, MT" style="width:100%;margin-bottom:8px">';
+    html += '<div style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:2px">Geographic wage adjustment</div>';
+    html += '<div style="font-size:11px;color:#64748b;margin-bottom:6px">Relative to national average: 1.00 = national avg, 1.10 = 10% above, 0.90 = 10% below. BLS OEWS publishes metro-level wage data at bls.gov/oes.</div>';
+    var adjAmber = !d.biz.geoAdj ? ' style="border-color:#f59e0b;background:#fffbeb;max-width:120px"' : ' style="max-width:120px"';
+    html += '<input type="number"' + adjAmber + ' value="' + (d.biz.geoAdj||'') + '" oninput="d.biz.geoAdj=this.value;as()" placeholder="e.g. 0.95" min="0.5" max="2.0" step="0.01">';
+    html += '</div>';
+  }
+  return html;
+}
+
+function makeExpSelect() {
+  var amber = !d.quals.exp ? ' style="border-color:#f59e0b;background:#fffbeb"' : '';
+  var html = '<select' + amber + ' onchange="d.quals.exp=this.value;as()">';
+  html += '<option value=""' + (!d.quals.exp ? ' selected' : '') + '>-- Select years of experience --</option>';
+  var keys = Object.keys(EXP);
+  for (var i = 0; i < keys.length; i++) {
+    var sel = keys[i] === d.quals.exp ? ' selected' : '';
+    html += '<option' + sel + '>' + keys[i] + '</option>';
+  }
+  html += '</select>';
+  return html;
+}
+
+function autoDistribute() {
+  var ar = allRoles();
+  if (!ar.length) return;
+  // Round down to nearest 5%, first role absorbs remainder to reach 100%
+  var each = Math.floor(Math.floor(100 / ar.length) / 5) * 5;
+  if (each < 5) each = 5;
+  var assigned = each * ar.length;
+  var remainder = 100 - assigned;
+  for (var i = 0; i < ar.length; i++) {
+    d.time[ar[i]] = each + (i === 0 ? remainder : 0);
+  }
+}
+
+function togR(id) {
+  var i = d.roles.sel.indexOf(id);
+  if (i >= 0) d.roles.sel.splice(i, 1);
+  else { d.roles.sel.push(id); if (!d.time[id]) d.time[id] = 0; }
+  autoDistribute();
+  as(); render();
+}
+
+function addCustomRole() {
+  var el = document.getElementById('cri');
+  if (el && el.value.trim()) {
+    var v = el.value.trim();
+    d.roles.custom.push(v);
+    d.time[v] = 0;
+    el.value = '';
+    autoDistribute();
+    as(); render();
+  }
+}
+
+function remCustom(i) {
+  var rid = d.roles.custom[i];
+  delete d.time[rid];
+  d.roles.custom.splice(i, 1);
+  autoDistribute();
+  as(); render();
+}
+
+function setPct(p) { d.mkt.pct = p; as(); render(); }
+
+function updTot() {
+  var t = Math.round(totPct());
+  var el = document.getElementById('totd');
+  var ml = document.getElementById('totm');
+  if (!el) return;
+  el.textContent = t + '%';
+  el.className = 'totn ' + (t === 100 ? 'ok' : t > 100 ? 'over' : 'under');
+  if (ml) {
+    if (t === 100) ml.textContent = 'Allocations total 100% — perfect';
+    else if (t > 100) ml.textContent = 'Over by ' + (t-100) + '% — reduce to reach 100%';
+    else ml.textContent = (100-t) + '% unallocated — must reach exactly 100%';
+  }
+  // Re-render nav buttons live so warning appears/disappears as user drags
+  var nb = document.getElementById('navbtns');
+  if (nb) nb.outerHTML = '<div id="navbtns">' + navBtns().replace('<div class="navb">', '').replace('</div>', '') + '</div>';
+  // Simpler: just update the whole navb
+  var navEl = document.querySelector('.navb');
+  if (navEl) navEl.outerHTML = navBtns();
+}
+
+function updSlider(rid, val) {
+  d.time[rid] = parseFloat(val);
+  as();
+  var el = document.getElementById('pct_' + rid);
+  if (el) el.textContent = Math.round(val) + '%';
+  updTot();
+}
+
+var BLS_KEY = '95c2cae50cbd4c568e11f021cc46be14';
+var BLS_ENDPOINT = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://api.bls.gov/publicAPI/v2/timeseries/data/' : '/api/bls';
+
+async function fetchBLS() {
+  var key = BLS_KEY;
+  if (!key || key.length < 10) { toast('Enter BLS API key first'); return; }
+  var ar = allRoles();
+  if (!ar.length) { toast('Select roles first (Step 2)'); return; }
+  var se = document.getElementById('blss');
+  var re = document.getElementById('blsr');
+  if (se) se.textContent = 'Fetching...';
+  if (re) re.innerHTML = '<div style="padding:1rem;text-align:center;font-size:13px;color:#64748b">Querying BLS OEWS API...</div>';
+  var ids = [];
+  var map = {};
+  for (var i = 0; i < ar.length; i++) {
+    var rid = ar[i];
+    var r = getRole(rid);
+    if (!r) continue;
+    var area = AREAS[d.biz.location] || '0000000';
+    var sid = 'OEUS' + area + r.occ + '05';
+    ids.push(sid);
+    map[sid] = {rid: rid, r: r};
+  }
+  try {
+    var res = await fetch(BLS_ENDPOINT, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({seriesid: ids, registrationkey: key, startyear: '2023', endyear: '2024'})
+    });
+    var json = await res.json();
+    if (json.status === 'REQUEST_SUCCEEDED' || json.status === 'REQUEST_SUCCEEDED_WITH_MESSAGE') {
+      var nb = JSON.parse(JSON.stringify(d.mkt.bls));
+      var series = json.Results.series;
+      for (var i = 0; i < series.length; i++) {
+        var s = series[i];
+        var meta = map[s.seriesID];
+        if (!meta) continue;
+        if (s.data && s.data.length > 0) {
+          var l = s.data[0];
+          var bk = meta.r.occ + '_' + d.biz.location;
+          nb[bk] = {med: parseFloat(l.value) * 2080, period: l.period + ' ' + l.year};
+        }
+      }
+      d.mkt.bls = nb;
+      saveData(true);
+      if (se) se.textContent = 'Live data loaded';
+      renderBLS();
+      toast('BLS data loaded');
+    } else {
+      var msg = (json.message && json.message.join) ? json.message.join(', ') : (json.status || 'Unknown error');
+      if (re) re.innerHTML = '<div class="blserr">BLS API error: ' + msg + '</div>';
+      if (se) se.textContent = 'Error';
+    }
+  } catch(e) {
+    if (re) re.innerHTML = '<div class="blserr">Network error: ' + e.message + '<br><br>The BLS API blocks requests from local HTML files (CORS restriction). To use live BLS data, host this file on a web server. Your built-in baseline estimates are still active and powering the calculation.</div>';
+    if (se) se.textContent = 'Not available locally';
+  }
+}
+
+function renderBLS() {
+  var el = document.getElementById('blsr');
+  if (!el) return;
+  var ar = allRoles();
+  var html = '';
+  var any = false;
+  for (var i = 0; i < ar.length; i++) {
+    var rid = ar[i];
+    var r = getRole(rid);
+    if (!r) continue;
+    var bk = r.occ + '_' + d.biz.location;
+    var b = d.mkt.bls && d.mkt.bls[bk];
+    if (b) {
+      any = true;
+      html += '<div class="blsr-row">';
+      html += '<div class="blson">' + r.bls + ' <span style="font-size:10px;color:#64748b">' + (b.period || '') + '</span></div>';
+      html += '<div class="blsw">';
+      html += '<div class="blswi"><div class="blswv">' + fm(b.med * 0.82) + '</div><div class="blswl">25th pct</div></div>';
+      html += '<div class="blswi"><div class="blswv">' + fm(b.med) + '</div><div class="blswl">median</div></div>';
+      html += '<div class="blswi"><div class="blswv">' + fm(b.med * 1.18) + '</div><div class="blswl">75th pct</div></div>';
+      html += '</div></div>';
+    }
+  }
+  el.innerHTML = any ? html : '<div style="font-size:12px;color:#64748b;padding:0.5rem 0">No live data yet. Paste your BLS API key above and click Fetch Data.<br><span style="font-size:11px;color:#94a3b8">Note: BLS live fetch requires a hosted URL — baseline estimates are active below.</span></div>';
+}
+
+function exportPDF() {
+  var btn = document.getElementById('pdfbtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+  try {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({unit:'mm', format:'letter'});
+    var W = 215.9, ml = 18, mr = 18, cw = W - ml - mr;
+    var y = 20;
+    var nv = [15,39,68], bl = [26,74,138], gr = [100,100,100], lg = [220,220,220];
+    var comp = calcComp();
+    var ar = allRoles();
+    var g = getGeoAdj();
+    var e = EXP[d.quals.exp] || 1;
+    var p = PCT[d.mkt.pct] || 1;
+
+    function chk(h) { if (y + h > 262) { doc.addPage(); y = 20; } }
+    function sh(t) {
+      chk(14);
+      doc.setFillColor(nv[0],nv[1],nv[2]);
+      doc.roundedRect(ml, y, cw, 8, 1, 1, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(9); doc.setFont('helvetica','bold');
+      doc.text(t.toUpperCase(), ml+4, y+5.5);
+      y += 12; doc.setTextColor(0,0,0);
+    }
+    function row(l, v) {
+      chk(7);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      doc.setTextColor(gr[0],gr[1],gr[2]);
+      doc.text(String(l), ml+2, y);
+      doc.setTextColor(0,0,0); doc.setFont('helvetica','bold');
+      doc.text(String(v), W-mr, y, {align:'right'});
+      y += 6;
+    }
+    function div() {
+      chk(4);
+      doc.setDrawColor(lg[0],lg[1],lg[2]);
+      doc.line(ml, y, W-mr, y);
+      y += 4;
+    }
+    function body(t) {
+      chk(8);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      doc.setTextColor(gr[0],gr[1],gr[2]);
+      var lines = doc.splitTextToSize(String(t), cw - 4);
+      doc.text(lines, ml+2, y);
+      y += lines.length * 5 + 2;
+    }
+
+    // Header bar
+    var today = new Date();
+    var todayStr = today.toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'});
+    var validThru = new Date(today.getFullYear()+1, today.getMonth(), today.getDate());
+    var validStr = validThru.toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'});
+    var taxYr = d.biz.taxyear || 'Not specified';
+    var ownerLine = (d.biz.name || '') + (d.biz.bizname ? ' of ' + d.biz.bizname : '');
+
+    doc.setFillColor(nv[0],nv[1],nv[2]);
+    doc.rect(0, 0, W, 32, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text('Reasonable Compensation Analysis', ml, 11);
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text('Prepared under IRS facts-and-circumstances standard  |  Cost Approach (Many Hats Method)', ml, 20);
+    doc.text('Confidential \u2014 prepared for audit defense purposes', ml, 27);
+    y = 38;
+
+    // Report metadata card
+    doc.setFillColor(245,247,250);
+    doc.roundedRect(ml, y, cw, 26, 2, 2, 'F');
+    doc.setDrawColor(200,210,225);
+    doc.roundedRect(ml, y, cw, 26, 2, 2, 'S');
+
+    var colW = cw / 4;
+    var metaItems = [
+      ['TAX YEAR', taxYr],
+      ['PREPARED', todayStr],
+      ['VALID THROUGH', validStr],
+      ['FOR', ownerLine || 'See Section 1']
+    ];
+    for (var mi = 0; mi < metaItems.length; mi++) {
+      var mx = ml + colW * mi + 3;
+      doc.setFont('helvetica','bold'); doc.setFontSize(7);
+      doc.setTextColor(100,116,139);
+      doc.text(metaItems[mi][0], mx, y + 9);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+      doc.setTextColor(15,23,42);
+      var valLines = doc.splitTextToSize(metaItems[mi][1], colW - 6);
+      doc.text(valLines, mx, y + 16);
+    }
+    y += 32;
+
+    // Comp box
+    doc.setFillColor(232,240,253);
+    doc.roundedRect(ml, y, cw, 22, 2, 2, 'F');
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.setTextColor(bl[0],bl[1],bl[2]);
+    doc.text('Indicated Reasonable W-2 Compensation', ml+cw/2, y+8, {align:'center'});
+    doc.setFontSize(24); doc.setFont('helvetica','bold');
+    doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text(fm(comp), ml+cw/2, y+18, {align:'center'});
+    y += 30;
+
+    sh('1. Business and Entity Information');
+    row('Business Name', d.biz.bizname || d.biz.name || 'Not provided');
+    row('EIN', d.biz.ein || 'Not provided');
+    row('Business Address', d.biz.address || 'Not provided');
+    row('Owner / Shareholder', d.biz.name || 'Not provided');
+    row('Tax Year', taxYr);
+    row('Industry', d.biz.industry);
+    row('Entity Type', d.biz.entity);
+    row('Number of Employees', (d.biz.employees || 'Not provided') + ' (informs management benchmarking)');
+    row('Geographic Market', getLocationLabel());
+    row('Geographic Wage Adjustment', 'x' + g.toFixed(2));
+    div();
+
+    sh('2. Company Financial Summary');
+    row('Annual Gross Revenue', d.biz.revenue || 'Not provided');
+    var np = parseInt((d.biz.netprofit||'0').replace(/[^0-9]/g,''))||0;
+    row('Net Profit (before owner comp)', d.biz.netprofit || 'Not provided');
+    if (np > 0) {
+      var aff = Math.round(np * 0.70);
+      row('Affordability Cap (70% of net profit)', fm(aff));
+      if (aff < comp) body('NOTE: Market-based indicated comp (' + fm(comp) + ' before cap) exceeds what the business can currently support. Indicated comp is capped at 70% of net profit. The IRS recognizes this when properly documented.');
+    }
+    div();
+
+    sh('3. Owner Role Allocation (Multi-Role Weighted Analysis)');
+    body('Per IRS guidance, each owner function is benchmarked separately. Using a single title such as CEO for an owner who also produces, manages staff, and handles sales is a known weakness.');
+    y += 2;
+
+    // Table header
+    var hdrs = ['Role','Time %','BLS Benchmark','Full-Time Salary','Weighted'];
+    var hdrsub = ['Owner function benchmarked','% time + annual hours','OEWS occupation used','Annual salary + hourly rate','Time-adjusted value'];
+    var xs = [0, 0.37, 0.52, 0.68, 0.84];
+    doc.setFillColor(nv[0],nv[1],nv[2]);
+    for (var i = 0; i < hdrs.length; i++) {
+      var w = i < 4 ? cw * (xs[i+1] - xs[i] - 0.01) : cw * 0.16;
+      doc.roundedRect(ml + cw * xs[i], y, w, 7, 0.5, 0.5, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+      doc.text(hdrs[i], ml + cw * xs[i] + 2, y + 4.8);
+    }
+    y += 7;
+    doc.setFillColor(235,240,250);
+    doc.rect(ml, y, cw, 5, 'F');
+    for (var si = 0; si < hdrsub.length; si++) {
+      doc.setTextColor(100,116,139); doc.setFontSize(6.5); doc.setFont('helvetica','italic');
+      doc.text(hdrsub[si], ml + cw * xs[si] + 2, y + 3.5);
+    }
+    y += 7; doc.setTextColor(0,0,0);
+
+    var bw = 0;
+    var totalAnnualHrs = Math.round((parseFloat(d.quals.hrs) || 40) * 52);
+    var chartLabels = [], chartHrsVals = [], chartCompVals = [];
+    for (var i = 0; i < ar.length; i++) {
+      chk(11);
+      var rid = ar[i];
+      var r = getRole(rid) || {label:rid, bls:'Custom', occ:'', mm:85000};
+      var pt = (parseFloat(d.time[rid]) || 0) / 100;
+      var bk = r.occ + '_' + d.biz.location;
+      var bd = d.mkt.bls && d.mkt.bls[bk];
+      var m = bd && bd.med ? bd.med : (r.mm || 85000);
+      bw += m * pt;
+      var hrsForRole = Math.round(totalAnnualHrs * pt);
+      var hrlyRate = Math.round(m / 2080);
+      chartLabels.push(getRoleLabel(rid, d.biz.industry));
+      chartHrsVals.push(hrsForRole);
+      chartCompVals.push(Math.round(m * pt));
+      if (i % 2 === 0) doc.setFillColor(248,250,253); else doc.setFillColor(255,255,255);
+      doc.rect(ml, y, cw, 11, 'F');
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.setTextColor(30,30,30);
+      doc.text(r.label || rid, ml+2, y+5);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8);
+      doc.setTextColor(30,30,30);
+      doc.text(Math.round(pt*100) + '%', ml + cw*0.38, y+4.2);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      doc.setTextColor(gr[0],gr[1],gr[2]);
+      doc.text(hrsForRole.toLocaleString() + ' hrs/yr', ml + cw*0.38, y+8.8);
+      doc.setFontSize(8); doc.setTextColor(gr[0],gr[1],gr[2]); doc.setFont('helvetica','normal');
+      doc.text(r.bls || '', ml + cw*0.53, y+5);
+      doc.setTextColor(30,30,30); doc.setFontSize(8);
+      doc.text(fm(m), ml + cw*0.69, y+4.2);
+      doc.setFontSize(7); doc.setTextColor(gr[0],gr[1],gr[2]);
+      doc.text('$' + hrlyRate.toLocaleString() + '/hr', ml + cw*0.69, y+8.8);
+      doc.setFontSize(8); doc.setTextColor(bl[0],bl[1],bl[2]); doc.setFont('helvetica','bold');
+      doc.text(fm(m * pt), ml + cw*0.85, y+5);
+      y += 11;
+    }
+    y += 4;
+
+    // --- Doughnut Charts: Hours Distribution + Compensation Weighting ---
+    (function() {
+      var CCOLS_HEX = ['#1a4a8a','#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#be185d','#166534','#ea580c','#92400e','#1e40af','#065f46','#78350f','#312e81','#4a044e'];
+      var CCOLS_RGB = [[26,74,138],[37,99,235],[22,163,74],[245,158,11],[220,38,38],[124,58,237],[8,145,178],[190,24,93],[22,101,52],[234,88,12],[146,64,14],[30,64,175],[6,95,70],[120,53,15],[49,46,129],[74,4,78]];
+
+      function makeDonut(vals, hexCols, title) {
+        try {
+          var cv = document.createElement('canvas');
+          cv.width = 220; cv.height = 220;
+          var ctx = cv.getContext('2d');
+          var tot = 0;
+          for (var di = 0; di < vals.length; di++) tot += (vals[di] || 0);
+          if (tot === 0) return null;
+          var cx = 110, cy = 110, rO = 95, rI = 58;
+          var ang = -Math.PI / 2;
+          for (var di = 0; di < vals.length; di++) {
+            if (!vals[di]) continue;
+            var sl = (vals[di] / tot) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, rO, ang, ang + sl);
+            ctx.closePath();
+            ctx.fillStyle = hexCols[di % hexCols.length];
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ang += sl;
+          }
+          ctx.beginPath();
+          ctx.arc(cx, cy, rI, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 13px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(title, cx, cy);
+          return cv.toDataURL('image/png');
+        } catch(e) { return null; }
+      }
+
+      var hrsImg = makeDonut(chartHrsVals, CCOLS_HEX, 'Hours');
+      var cmpImg = makeDonut(chartCompVals, CCOLS_HEX, 'Comp $');
+      if (!hrsImg || !cmpImg) return;
+
+      var cW2 = (cw - 5) / 2;
+      var cH2 = cW2;
+      chk(cH2 + 42);
+      doc.addImage(hrsImg, 'PNG', ml, y, cW2, cH2);
+      doc.addImage(cmpImg, 'PNG', ml + cW2 + 5, y, cW2, cH2);
+      y += cH2 + 3;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(nv[0],nv[1],nv[2]);
+      doc.text('Annual Hours by Role', ml + cW2/2, y, {align:'center'});
+      doc.text('Compensation Weighting', ml + cW2 + 5 + cW2/2, y, {align:'center'});
+      y += 6;
+
+      var totHrs = 0, totCmp = 0;
+      for (var li = 0; li < chartHrsVals.length; li++) { totHrs += chartHrsVals[li]; totCmp += chartCompVals[li]; }
+      var legColW = cw / 2;
+      var numRows = Math.ceil(chartLabels.length / 2);
+      for (var lr = 0; lr < numRows; lr++) {
+        chk(6);
+        for (var lc = 0; lc < 2; lc++) {
+          var li = lr * 2 + lc;
+          if (li >= chartLabels.length) continue;
+          var lx = ml + lc * legColW;
+          var cc = CCOLS_RGB[li % CCOLS_RGB.length];
+          doc.setFillColor(cc[0],cc[1],cc[2]);
+          doc.rect(lx, y, 4, 4, 'F');
+          doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(30,30,30);
+          var hp = totHrs > 0 ? Math.round(chartHrsVals[li]/totHrs*100) + '%' : '0%';
+          var cp = totCmp > 0 ? Math.round(chartCompVals[li]/totCmp*100) + '%' : '0%';
+          doc.text(chartLabels[li] + ' (' + hp + ' hrs / ' + cp + ' comp)', lx + 6, y + 3.2);
+        }
+        y += 5.5;
+      }
+      y += 4;
+    })();
+    div();
+
+    var dn = (d.rpt && d.rpt.dutyNarrative) || '';
+    var qualSecNum = dn ? '5' : '4';
+    if (dn) {
+      sh('4. Owner Duty Description');
+      body(dn);
+      if (d.quals.hrs) { y += 2; body('Average hours per week: ' + d.quals.hrs + (d.quals.wks ? ' | Weeks per year: ' + d.quals.wks : '')); }
+      div();
+    }
+
+    sh('5. Owner Qualifications');
+    row('Education', d.quals.edu);
+    row('Professional Credentials', d.quals.creds || 'None listed');
+    row('Years of Experience', d.quals.exp);
+    if (d.quals.spec) row('Specialty / Niche', d.quals.spec);
+    if (d.quals.sup) row('Staff Supervised Directly', String(d.quals.sup));
+    if (d.quals.bob) row('Book of Business / Revenue Dependency', d.quals.bob);
+    if (d.quals.rep) { y += 2; body('Additional Notes: ' + d.quals.rep); }
+    // Qualification support narrative
+    (function() {
+      var qparts = [];
+      if (d.quals.edu && d.quals.exp) {
+        qparts.push('This owner holds ' + d.quals.edu + ' with ' + d.quals.exp + ' of professional experience');
+      } else if (d.quals.edu) {
+        qparts.push('This owner holds ' + d.quals.edu);
+      } else if (d.quals.exp) {
+        qparts.push('This owner has ' + d.quals.exp + ' of professional experience');
+      }
+      var cr = (d.quals.creds || '').toLowerCase();
+      if (d.quals.creds && cr !== 'none' && cr !== 'none listed' && cr !== 'n/a') {
+        qparts.push('holds professional credentials (' + d.quals.creds + ')');
+      }
+      if (d.quals.sup && parseInt(d.quals.sup) > 0) {
+        qparts.push('directly supervises ' + d.quals.sup + ' staff');
+      }
+      if (qparts.length === 0) return;
+      var qn = qparts.join(', ') + '.';
+      if (d.mkt.pct) {
+        qn += ' These qualifications are consistent with and support selection of the ' + (PCTL[d.mkt.pct] || d.mkt.pct) + ' for this geographic market. The percentile serves as the sole qualification lever in this analysis, ensuring no double-counting of adjustments.';
+      }
+      y += 3;
+      body(qn);
+    })();
+    div();
+
+    sh('6. Market Data and Percentile Selection');
+    row('Percentile Selected', PCTL[d.mkt.pct] || d.mkt.pct);
+    row('Percentile Adjustment Factor', 'x' + p.toFixed(2));
+    row('Geographic Adjustment Factor', 'x' + g.toFixed(2));
+    row('Primary Data Source', 'BLS OEWS — bls.gov/oes');
+    var rationale = d.mkt.rat || buildRatNow(d.mkt.pct, d.biz.industry, d.mkt.qq||{});
+    if (rationale) { y += 4; body('Rationale for percentile selection:'); y += 2; body(rationale); }
+    div();
+
+    sh('7. Calculation Methodology');
+    chk(42);
+    doc.setFillColor(248,250,253);
+    doc.roundedRect(ml, y, cw, 36, 1, 1, 'F');
+    var cy = y + 9;
+    var steps_calc = [
+      ['Step 1: Base weighted compensation (all roles x time allocation)', fm(bw)],
+      ['Step 2: Geographic market adjustment (' + getLocationLabel() + ' x ' + g.toFixed(2) + ')', fm(bw * g)],
+      ['Step 3: Percentile adjustment (' + (PCTL[d.mkt.pct] || d.mkt.pct) + ' x ' + p.toFixed(2) + ' — incorporates owner qualifications)', fm(comp)]
+    ];
+    for (var i = 0; i < steps_calc.length; i++) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      doc.setTextColor(gr[0],gr[1],gr[2]);
+      doc.text(steps_calc[i][0], ml+4, cy);
+      if (i === steps_calc.length - 1) doc.setTextColor(nv[0],nv[1],nv[2]);
+      else doc.setTextColor(bl[0],bl[1],bl[2]);
+      doc.setFont('helvetica','bold');
+      doc.text(steps_calc[i][1], W-mr-4, cy, {align:'right'});
+      cy += 9;
+    }
+    y += 40;
+
+    div();
+    sh('8. Required Documentation Exhibits');
+    var exhibits = [
+      '1. BLS OEWS wage data printout for each benchmark occupation and metro area (bls.gov/oes)',
+      '2. Written owner duty description with time allocation narrative (must match this report)',
+      '3. Company financial summary: gross revenue and net profit for the tax year',
+      '4. Professional credential documentation (license numbers, issue dates, renewal dates)',
+      '5. Copy of any compensation agreement between shareholder-employee and the corporation',
+      '6. Prior year W-2 history if establishing a documented reasonable comp policy for first time'
+    ];
+    for (var i = 0; i < exhibits.length; i++) body(exhibits[i]);
+
+    // === SECTION 8: METHODOLOGY ===
+    y += 6;
+    div();
+    sh('9. Methodology: Cost Approach (Many Hats Method)');
+    body('This report applies the Cost Approach — also known as the Many Hats Method — to determine Reasonable Compensation. This methodology is recognized by the IRS and Tax Courts as the most appropriate approach for closely-held S-Corporation owners who perform multiple job functions within their business.');
+    y += 3;
+    body('Under this approach, each function the owner performs is identified, time-allocated, and benchmarked separately using Bureau of Labor Statistics Occupational Employment and Wage Statistics (OEWS) data. The individual weighted benchmarks are then adjusted for geographic market and owner qualifications — reflected through the selected percentile — to produce a single indicated compensation figure. This structure avoids double-counting: the percentile is the sole lever for owner qualifications, and is supported by the documented experience, education, and credentials in Section ' + qualSecNum + '.');
+    y += 3;
+    body('This approach was selected over the Market Approach (single-title benchmarking) because the owner performs duties across multiple functional areas. Using a single title such as CEO for an owner who also handles production, administration, and client work is a recognized IRS weakness in compensation determinations. The Income Approach (Independent Investors Test) was not used because it requires Fair Market Value data typically unavailable for closely-held businesses and is primarily designed for C-Corporation compensation reviews.');
+    y += 3;
+    body('Primary data source: BLS OEWS (bls.gov/oes).');
+    div();
+
+    // === SECTION 9: COMPENSATION RANGE ===
+    sh('10. Compensation Range by Geography and Percentile');
+    body('Any amount within the local defensible range below is supportable. The indicated compensation in this report reflects the ' + (PCTL[d.mkt.pct] || d.mkt.pct) + ' for this geographic market.');
+    y += 4;
+    var hrs2 = parseFloat(d.quals.hrs) || 40;
+    var ha2 = hrs2 < 40 ? Math.min(hrs2 / 40, 1) : 1;
+    var natLow  = Math.round(bw * 0.82 * ha2);
+    var natSug  = Math.round(bw * 1.00 * ha2);
+    var natHigh = Math.round(bw * 1.18 * ha2);
+    var locLow  = Math.round(bw * g * 0.82 * ha2);
+    var locSug  = Math.round(bw * g * 1.00 * ha2);
+    var locHigh = Math.round(bw * g * 1.18 * ha2);
+    chk(36);
+    doc.setFillColor(nv[0],nv[1],nv[2]); doc.rect(ml, y, cw, 7, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text('Geography', ml + 3, y + 4.8);
+    doc.text('25th Pct (Low)', ml + cw * 0.38, y + 4.8);
+    doc.text('50th Pct (Median)', ml + cw * 0.57, y + 4.8);
+    doc.text('75th Pct (High)', ml + cw * 0.76, y + 4.8);
+    y += 9;
+    doc.setFillColor(248,250,253); doc.rect(ml, y, cw, 8, 'F');
+    doc.setTextColor(gr[0],gr[1],gr[2]); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text('National Average', ml + 3, y + 5.3);
+    doc.setTextColor(30,30,30);
+    doc.text(fm(natLow), ml + cw * 0.38, y + 5.3);
+    doc.text(fm(natSug), ml + cw * 0.57, y + 5.3);
+    doc.text(fm(natHigh), ml + cw * 0.76, y + 5.3);
+    y += 10;
+    doc.setFillColor(232,240,253); doc.rect(ml, y, cw, 8, 'F');
+    doc.setTextColor(nv[0],nv[1],nv[2]); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    var locLabel = (getLocationLabel() || 'Local Market') + '  (selected)';
+    doc.text(locLabel, ml + 3, y + 5.3);
+    doc.setTextColor(30,30,30);
+    doc.text(fm(locLow), ml + cw * 0.38, y + 5.3);
+    doc.setTextColor(bl[0],bl[1],bl[2]);
+    doc.text(fm(locSug), ml + cw * 0.57, y + 5.3);
+    doc.setTextColor(gr[0],gr[1],gr[2]); doc.setFont('helvetica','normal');
+    doc.text(fm(locHigh), ml + cw * 0.76, y + 5.3);
+    y += 12;
+    body('Geographic adjustment: x' + g.toFixed(2) + ' for ' + (getLocationLabel() || 'selected market') + '. Indicated compensation of ' + fm(comp) + ' uses ' + (PCTL[d.mkt.pct] || d.mkt.pct) + ' with geographic adjustment applied.');
+    div();
+
+    // === SECTION 11: OTHER CONSIDERATIONS / STRESS TEST ===
+    sh('11. Other Considerations and IRS Stress Test Factors');
+    body('For most S-Corporation shareholder-employees, the indicated compensation above should not require further adjustment. However, the following factors may warrant review before finalizing the figure:');
+    y += 3;
+    var stFactors = [
+      'Compensation paid to non-owner employees in comparable roles',
+      'Prior year salary history and documented compensation policy',
+      'Travel requirements and frequency of out-of-market client work',
+      'Personal guarantee of corporate debt by the shareholder-employee',
+      'Key client relationships or exclusive contracts held by the owner personally',
+      'Financial condition of the company: profitability, liquidity, and growth stage',
+      'Distribution history and wages-to-distributions ratio'
+    ];
+    for (var sfi = 0; sfi < stFactors.length; sfi++) {
+      chk(7);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(gr[0],gr[1],gr[2]);
+      doc.text(String(sfi + 1) + '.  ' + stFactors[sfi], ml + 4, y);
+      y += 6;
+    }
+    y += 4;
+    body('The IRS and Tax Courts have applied four well-recognized frameworks to stress-test compensation figures:');
+    y += 3;
+    var courtTests = [
+      '1. IRS Nine Factors Considered by Tax Courts — IRS Fact Sheet 2008-25',
+      '2. Tax Court Five-Factor Test — LabelGraphics, Inc. v. Commissioner, T.C. Memo 1998-343',
+      '3. Tax Court Ten-Factor Test — Brewer Quality Homes, Inc. v. Commissioner, T.C. Memo 2003-200',
+      '4. Independent Investor Test — Exacto Spring Corp. v. Commissioner, 196 F.3d 833 (7th Cir. 1999)'
+    ];
+    for (var cti = 0; cti < courtTests.length; cti++) {
+      chk(7);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(bl[0],bl[1],bl[2]);
+      doc.text(courtTests[cti], ml + 4, y);
+      y += 7;
+    }
+    y += 3;
+    body('Additional IRS guidance: IRS Fact Sheet 2008-25 (Wage Compensation for S Corporation Officers); IRS guidance on S Corporation Compensation and Medical Insurance Issues; IRS Instructions for Form 1125-E.');
+    div();
+
+    // Disclaimer on main report
+    y += 4;
+    chk(16);
+    doc.setFillColor(240,246,255);
+    doc.roundedRect(ml, y, cw, 14, 1, 1, 'F');
+    doc.setTextColor(nv[0],nv[1],nv[2]); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    doc.text('DISCLAIMER', ml+cw/2, y+5, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setTextColor(gr[0],gr[1],gr[2]);
+    doc.text('This report is a documentation aid and does not constitute legal or tax advice. Consult a qualified tax professional.', ml+cw/2, y+10, {align:'center'});
+    y += 18;
+
+    // === APPENDIX A: ROLE DESCRIPTIONS ===
+    doc.addPage(); y = 20;
+    doc.setFillColor(nv[0],nv[1],nv[2]);
+    doc.rect(0, 0, W, 16, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('Reasonable Compensation Report  |  ' + (d.biz.bizname || d.biz.name || '') + '  |  Appendix A', ml, 10);
+    y = 26;
+    sh('Appendix A: Role and Occupation Descriptions');
+    body('The following descriptions apply to each role selected in this report. Definitions are derived from Bureau of Labor Statistics Standard Occupational Classification (SOC) definitions and form part of the factual record supporting the multi-role benchmarking methodology used in this report.');
+    y += 4;
+    var roleDescMap = {
+      'tax_prep':   'Prepare tax returns for individuals or small businesses. Interview clients to obtain additional information on taxable income and deductible expenses. Review completed returns for accuracy and IRS compliance. BLS SOC 13-2082.',
+      'tax_review': 'Review completed tax returns for accuracy, IRS compliance, and optimization before filing. Manage the quality control process for the firm. Provide final approval on complex or high-risk returns. BLS SOC 11-3031.',
+      'tax_plan':   'Provide tax planning and financial advisory services including entity structuring, long-term tax minimization strategy, and analysis of the tax impact of financial decisions. BLS SOC 11-3031.',
+      'client':     'Build and maintain client relationships. Serve as primary point of contact, manage onboarding, ensure service quality, and identify opportunities for expanded advisory work. BLS SOC 13-2052.',
+      'sales':      'Develop new business through prospecting, networking, and referral cultivation. Present firm services to prospective clients and manage engagement pipeline through close. BLS SOC 11-2022.',
+      'staff':      'Direct and supervise professional and administrative staff. Assign and review work output, provide performance feedback, and oversee scheduling and employee development. BLS SOC 11-1021.',
+      'admin':      'Plan and coordinate administrative and operational functions of the organization. Oversee office systems, vendor relationships, and day-to-day support functions. BLS SOC 11-1021.',
+      'book':       'Compute, classify, and record numerical data to maintain complete financial records. Perform calculating, posting, and verifying duties to obtain primary financial data for accounting. BLS SOC 43-3031.',
+      'ceo':        'Determine and formulate policies and provide overall strategic direction of the company. Plan, direct, and coordinate operations at the highest management level. Set organizational strategy and oversee firm-wide performance. BLS SOC 11-1011.',
+      'mktg':       'Plan, direct, and coordinate marketing activities. Develop client acquisition campaigns, manage firm brand and digital presence, and identify business development opportunities. BLS SOC 11-2021.',
+      'it':         'Plan, direct, and coordinate technology activities of the firm. Oversee software systems, cybersecurity protocols, hardware infrastructure, and technical support for staff and client-facing systems. BLS SOC 11-3021.',
+      'legal':      'Develop, implement, and monitor compliance with applicable laws and regulations. Identify regulatory risk, conduct internal reviews, and coordinate with legal counsel. BLS SOC 13-1041.',
+      'ops':        'Plan, direct, or coordinate the day-to-day operations of the company. Formulate operational policies, manage resource allocation, and oversee workflow across departments. BLS SOC 11-1021.',
+      'med':        'Diagnose, treat, and manage patient health conditions. Conduct examinations, interpret diagnostic tests, prescribe treatment plans, and coordinate care with other healthcare professionals. BLS SOC 29-1228.',
+      'eng':        'Research, design, evaluate, and maintain technical systems or equipment. Apply engineering principles to solve complex technical problems in support of organizational operations. BLS SOC 17-2141.',
+      'cre':        'Formulate visual design concepts and oversee creation of marketing and communications materials. Direct graphic design, photography, and digital content production in support of firm branding. BLS SOC 27-1011.'
+    };
+    for (var rdi = 0; rdi < ar.length; rdi++) {
+      var rdid = ar[rdi];
+      var rdrole = getRole(rdid) || {label: rdid, bls: rdid, occ: ''};
+      var rddesc = roleDescMap[rdid] || ('Performs duties associated with ' + (rdrole.bls || rdid) + ' as defined by the Bureau of Labor Statistics.');
+      var rdlines = doc.splitTextToSize(rddesc, cw - 12);
+      var rdheight = 16 + rdlines.length * 5;
+      chk(rdheight + 6);
+      doc.setFillColor(248,250,253);
+      doc.roundedRect(ml, y, cw, rdheight, 1, 1, 'F');
+      doc.setTextColor(nv[0],nv[1],nv[2]); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text((rdrole.label || rdid) + '  (' + Math.round(d.time[rdid] || 0) + '% of time)', ml + 4, y + 6);
+      doc.setTextColor(bl[0],bl[1],bl[2]); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text('BLS Title: ' + (rdrole.bls || ''), ml + 4, y + 11);
+      doc.setTextColor(gr[0],gr[1],gr[2]);
+      doc.text(rdlines, ml + 4, y + 16);
+      y += rdheight + 4;
+    }
+
+    // === CORPORATE MEETING MINUTES ===
+    doc.addPage(); y = 18;
+    var bizName = d.biz.bizname || d.biz.name || '';
+    var ownerName = d.biz.name || '';
+    var bizAddr = d.biz.address || '';
+    var entityType = d.biz.entity || 'S-Corporation';
+    var minutesTaxYr = d.biz.taxyear || taxYr;
+
+    // Page header — clean, no "template" language
+    doc.setFillColor(nv[0],nv[1],nv[2]);
+    doc.rect(0, 0, W, 14, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text('CORPORATE MEETING MINUTES  |  ' + bizName.toUpperCase() + '  |  TAX YEAR ' + minutesTaxYr, ml, 9);
+
+    // Page-break helper for minutes section — redraws header on each new page
+    function chkMin(h) {
+      if (y + (h || 0) > 260) {
+        doc.addPage();
+        doc.setFillColor(nv[0],nv[1],nv[2]);
+        doc.rect(0, 0, W, 14, 'F');
+        doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.text('CORPORATE MEETING MINUTES  |  ' + bizName.toUpperCase() + '  |  TAX YEAR ' + minutesTaxYr, ml, 9);
+        doc.setTextColor(0,0,0);
+        y = 22;
+      }
+    }
+
+    // Title block
+    y = 24;
+    doc.setTextColor(0,0,0); doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('MINUTES OF ANNUAL MEETING OF DIRECTORS', ml + cw/2, y, {align:'center'});
+    y += 7;
+    doc.setFontSize(11);
+    doc.text('AND SHAREHOLDERS OF', ml + cw/2, y, {align:'center'});
+    y += 7;
+    doc.setFontSize(13);
+    doc.text(bizName.toUpperCase(), ml + cw/2, y, {align:'center'});
+    y += 5;
+    doc.setLineWidth(0.5); doc.setDrawColor(nv[0],nv[1],nv[2]);
+    doc.line(ml, y, ml + cw, y);
+    y += 10;
+
+    // Meeting details block
+    doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30);
+    var lw = cw * 0.38;
+    var detailItems = [
+      ['Entity Name:', bizName],
+      ['Entity Type:', entityType],
+      ['Principal Office:', bizAddr || '________________________________'],
+      ['Tax Year:', minutesTaxYr],
+      ['Date of Meeting:', '________________________________'],
+      ['Time of Meeting:', '________________________________'],
+      ['Location of Meeting:', '________________________________']
+    ];
+    for (var di = 0; di < detailItems.length; di++) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+      doc.text(detailItems[di][0], ml, y);
+      doc.setFont('helvetica','normal');
+      doc.text(String(detailItems[di][1]), ml + lw, y);
+      y += 6;
+    }
+    y += 4;
+    doc.setLineWidth(0.3); doc.setDrawColor(200,200,200);
+    doc.line(ml, y, ml + cw, y);
+    y += 8;
+
+    // Attendees
+    chkMin(55);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('1.  ATTENDEES', ml, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    var att1 = 'The following individuals were present, constituting a quorum sufficient to conduct business:';
+    doc.text(doc.splitTextToSize(att1, cw), ml + 4, y);
+    y += 10;
+    doc.setFont('helvetica','bold');
+    doc.text(ownerName || '________________________________', ml + 12, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.setTextColor(gr[0],gr[1],gr[2]);
+    doc.text('Owner / Shareholder / Director', ml + 12, y + 5);
+    y += 14;
+    doc.setFontSize(9); doc.setTextColor(30,30,30); doc.setFont('helvetica','normal');
+    doc.text('Other attendees (if any): ________________________________________________________________', ml + 4, y);
+    y += 10;
+
+    // Call to order
+    chkMin(40);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('2.  CALL TO ORDER', ml, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    var callText = ownerName + ', acting as Chairperson, called the meeting to order and confirmed that all required notices had been given or properly waived, and that a quorum was present.';
+    var callLines = doc.splitTextToSize(callText, cw - 4);
+    doc.text(callLines, ml + 4, y);
+    y += callLines.length * 5 + 8;
+
+    // Reasonable compensation discussion
+    chkMin(30);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('3.  DISCUSSION — OWNER COMPENSATION FOR TAX YEAR ' + minutesTaxYr, ml, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    var disc1 = 'The Chairperson presented and discussed the Reasonable Compensation Analysis prepared for tax year ' + minutesTaxYr + ' (attached hereto as Exhibit A). The analysis was prepared using the Cost Approach — Many Hats Method — consistent with IRS guidance for closely-held S-Corporation owners who perform multiple job functions within the business.';
+    doc.text(doc.splitTextToSize(disc1, cw - 4), ml + 4, y);
+    y += doc.splitTextToSize(disc1, cw - 4).length * 5 + 4;
+    var disc2 = 'The following factors were reviewed and discussed by those present:';
+    doc.text(disc2, ml + 4, y);
+    y += 7;
+    var discFactors = [
+      'Owner duties and time allocation across ' + allRoles().length + ' identified role(s)',
+      'BLS OEWS wage benchmarks for the geographic market of ' + getLocationLabel(),
+      'Owner qualifications: ' + (d.quals.edu || 'see attached report') + ', ' + (d.quals.exp || 'see attached report') + ' of experience',
+      'Selected compensation percentile: ' + (PCTL[d.mkt.pct] || d.mkt.pct || 'see attached report'),
+      'Net business profit before owner compensation: ' + (d.biz.netprofit || 'see attached report')
+    ];
+    for (var dfi = 0; dfi < discFactors.length; dfi++) {
+      chkMin(7);
+      doc.text('\u2022  ' + discFactors[dfi], ml + 8, y);
+      y += 5.5;
+    }
+    y += 6;
+
+    // Resolution
+    chkMin(100);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('4.  RESOLUTION — APPROVAL OF REASONABLE COMPENSATION', ml, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    var motionText = 'Upon motion duly made, seconded, and unanimously carried, the following resolution was adopted:';
+    doc.text(doc.splitTextToSize(motionText, cw - 4), ml + 4, y);
+    y += doc.splitTextToSize(motionText, cw - 4).length * 5 + 6;
+
+    // Resolution box
+    var resBoxStart = y;
+    y += 8;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+    doc.text('RESOLVED,', ml + 8, y);
+    y += 6;
+    doc.setFont('helvetica','normal');
+    var resolvedText = 'that the Board of Directors of ' + bizName + ' (the "Company") hereby approves and adopts the Reasonable Compensation Analysis for tax year ' + minutesTaxYr + ', attached hereto as Exhibit A, and further resolves to authorize, establish, and pay to ' + ownerName + ' reasonable W-2 compensation in the amount of';
+    var resolvedLines = doc.splitTextToSize(resolvedText, cw - 16);
+    doc.text(resolvedLines, ml + 8, y);
+    y += resolvedLines.length * 5 + 4;
+    chkMin(12);
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text(fm(comp) + ' per year', ml + cw/2, y, {align:'center'});
+    y += 8;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+    var resolvedText2 = 'for services rendered to the Company during tax year ' + minutesTaxYr + ', effective as of the date of this resolution. This amount is supported by the attached Reasonable Compensation Analysis and is determined to be consistent with what would be paid for the same services in an arm\'s-length transaction.';
+    var resolvedLines2 = doc.splitTextToSize(resolvedText2, cw - 16);
+    doc.text(resolvedLines2, ml + 8, y);
+    y += resolvedLines2.length * 5 + 8;
+    doc.setDrawColor(nv[0],nv[1],nv[2]); doc.setLineWidth(0.8);
+    doc.roundedRect(ml + 4, resBoxStart, cw - 8, y - resBoxStart, 2, 2, 'S');
+    y += 8;
+
+    // Vote record
+    chkMin(22);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('5.  VOTE', ml, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    doc.text('In favor: ___________   Opposed: ___________   Abstained: ___________', ml + 4, y);
+    y += 9;
+
+    // Other business
+    chkMin(50);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('6.  OTHER BUSINESS', ml, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    doc.text('There being no further business to come before the meeting, the following matters were noted:', ml + 4, y);
+    y += 8;
+    doc.setDrawColor(180,180,180); doc.setLineWidth(0.2);
+    doc.line(ml + 4, y, ml + cw, y); y += 6;
+    doc.line(ml + 4, y, ml + cw, y); y += 6;
+    doc.line(ml + 4, y, ml + cw, y); y += 10;
+
+    // Adjournment
+    chkMin(25);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('7.  ADJOURNMENT', ml, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    doc.text('There being no further business, the meeting was adjourned at __________ (time).', ml + 4, y);
+    y += 12;
+
+    // Signature / attestation block
+    chkMin(95);
+    doc.setLineWidth(0.5); doc.setDrawColor(nv[0],nv[1],nv[2]);
+    doc.line(ml, y, ml + cw, y);
+    y += 8;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('CERTIFICATION', ml + cw/2, y, {align:'center'});
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    var certText = 'The undersigned hereby certifies that the foregoing is a true and complete record of the actions taken at the Annual Meeting of Directors and Shareholders of ' + bizName + ' held for tax year ' + minutesTaxYr + '.';
+    doc.text(doc.splitTextToSize(certText, cw), ml, y);
+    y += doc.splitTextToSize(certText, cw).length * 5 + 12;
+
+    doc.setDrawColor(100,100,100); doc.setLineWidth(0.3);
+    doc.line(ml, y, ml + cw * 0.44, y);
+    doc.line(ml + cw * 0.56, y, ml + cw, y);
+    y += 4;
+    doc.setFontSize(8); doc.setTextColor(gr[0],gr[1],gr[2]);
+    doc.text('Signature', ml, y);
+    doc.text('Date', ml + cw * 0.56, y);
+    y += 8;
+    doc.setTextColor(30,30,30); doc.setFontSize(9);
+    doc.text('Printed Name: ________________________________   Title: _______________________________', ml, y);
+    y += 10;
+    doc.line(ml, y, ml + cw * 0.44, y);
+    doc.line(ml + cw * 0.56, y, ml + cw, y);
+    y += 4;
+    doc.setFontSize(8); doc.setTextColor(gr[0],gr[1],gr[2]);
+    doc.text('Secretary (if different from above)', ml, y);
+    doc.text('Date', ml + cw * 0.56, y);
+    y += 8;
+    doc.setTextColor(30,30,30); doc.setFontSize(9);
+    doc.text('Printed Name: ________________________________   Title: _______________________________', ml, y);
+    y += 14;
+
+    // Footer note — small, professional, not a disclaimer box
+    chkMin(18);
+    doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(gr[0],gr[1],gr[2]);
+    var footNote = 'These minutes, together with the attached Reasonable Compensation Analysis (Exhibit A), should be filed with the permanent corporate records of ' + bizName + '. Corporate minutes requirements vary by state. Consult qualified legal counsel as appropriate.';
+    doc.text(doc.splitTextToSize(footNote, cw), ml, y);
+    y += 12;
+
+    // Annual renewal notice
+    doc.addPage();
+    y = 20;
+    doc.setFillColor(240,249,255);
+    doc.roundedRect(ml, y, cw, 52, 2, 2, 'F');
+    doc.setDrawColor(147,197,253);
+    doc.roundedRect(ml, y, cw, 52, 2, 2, 'S');
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('Report Validity and Annual Review Recommendation', ml+cw/2, y+10, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(gr[0],gr[1],gr[2]);
+    var renewLine1 = 'This reasonable compensation analysis was prepared on ' + todayStr + ' and is valid through ' + validStr + '.';
+    var renewLine2 = 'It reflects compensation data for tax year ' + taxYr + ' based on BLS OEWS wage benchmarks, owner qualifications, and geographic market at the time of preparation.';
+    var renewLine3 = 'Reasonable compensation should be re-evaluated every year. The following changes may materially affect the indicated figure and require a new analysis:';
+    var renewBullets = [
+      'Change in owner duties, time allocation, or roles performed',
+      'Significant change in business revenue, headcount, or profitability',
+      'Geographic relocation of the business',
+      'Updated BLS OEWS wage data (published annually by the Bureau of Labor Statistics)',
+      'Change in owner credentials, experience tier, or industry niche'
+    ];
+    doc.text(doc.splitTextToSize(renewLine1, cw-8), ml+4, y+18);
+    doc.text(doc.splitTextToSize(renewLine2, cw-8), ml+4, y+25);
+    doc.text(doc.splitTextToSize(renewLine3, cw-8), ml+4, y+36);
+    y += 56;
+    for (var rbi = 0; rbi < renewBullets.length; rbi++) {
+      chk(7);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(gr[0],gr[1],gr[2]);
+      doc.text('\u2022  ' + renewBullets[rbi], ml+6, y);
+      y += 6;
+    }
+    y += 4;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(nv[0],nv[1],nv[2]);
+    doc.text('Recommended: Perform a new reasonable compensation analysis each year before W-2s are finalized.', ml+4, y);
+    y += 8;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(gr[0],gr[1],gr[2]);
+    doc.text('This report was generated using the Reasonable Compensation Builder by Level Up Quest. For questions about reasonable compensation methodology,', ml+4, y);
+    y += 5;
+    doc.text('IRS audit defense, or S-Corp advisory best practices, visit levelupquest.com.', ml+4, y);
+
+    var fname = 'ReasonableComp_' + (d.biz.name || 'Report').replace(/[^a-z0-9]/gi, '_') + '.pdf';
+    doc.save(fname);
+    toast('PDF downloaded');
+  } catch(e) {
+    alert('PDF error: ' + e.message);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Export PDF'; }
+}
+
+function renderProgress() {
+  var html = '';
+  for (var i = 0; i < STEPS.length; i++) {
+    var cls = i < cur ? 'done' : i === cur ? 'active' : '';
+    var lbl = i < cur ? '&#10003;' : String(i+1);
+    html += '<div class="sdot" onclick="goStep(' + i + ')">';
+    html += '<div class="dot ' + cls + '">' + lbl + '</div>';
+    html += '<div class="slabel">' + STEPS[i] + '</div>';
+    html += '</div>';
+  }
+  document.getElementById('pbar').innerHTML = html;
+  document.getElementById('pfill').style.width = Math.round((cur/6)*100) + '%';
+}
+
+function goStep(n) { if (n <= cur || n === cur + 1) { cur = n; render(); } }
+function nav(dir) { cur = Math.max(0, Math.min(6, cur + dir)); render(); }
+
+function stepMissing() {
+  var id = STEP_IDS[cur];
+  var missing = [];
+  if (id === 'business') {
+    if (!d.biz.name)     missing.push('Owner / shareholder name');
+    if (!d.biz.bizname)  missing.push('Business name');
+    if (!d.biz.industry) missing.push('Industry');
+    if (!d.biz.entity)   missing.push('Entity type');
+    if (!d.biz.location) {
+      missing.push('Geographic market');
+    } else if (d.biz.location === 'Custom Location' && !d.biz.geoAdj) {
+      missing.push('Geographic wage adjustment (required for Custom Location)');
+    }
+  } else if (id === 'roles') {
+    if (!d.roles.sel.length && !d.roles.custom.length) missing.push('At least one duty / role must be selected');
+  } else if (id === 'time') {
+    if (Math.round(totPct()) !== 100) missing.push('Time allocations must total exactly 100%');
+  } else if (id === 'quals') {
+    if (!d.quals.edu) missing.push('Education level');
+    if (!d.quals.exp) missing.push('Years of experience');
+  } else if (id === 'market') {
+    if (!d.mkt.pct) missing.push('Percentile selection');
+  }
+  return missing;
+}
+
+function navBtns() {
+  var back = cur > 0 ? '<button class="bbk" onclick="nav(-1)">&#8592; Back</button>' : '<div></div>';
+  var next = '';
+  var warn = '';
+  if (cur < 6) {
+    var missing = stepMissing();
+    if (missing.length > 0) {
+      var label = cur === 5 ? 'View Report' : 'Continue';
+      var msgs = '';
+      for (var mi = 0; mi < missing.length; mi++) {
+        msgs += '<div style="margin-top:2px">&#8227; ' + missing[mi] + '</div>';
+      }
+      warn = '<div style="font-size:12px;color:#dc2626;font-weight:600;text-align:right;margin-bottom:6px">' + msgs + '</div>';
+      next = '<button class="bnx" style="opacity:0.4;cursor:not-allowed" onclick="return false;">' + label + ' &#8594;</button>';
+    } else {
+      next = '<button class="bnx" onclick="nav(1)">' + (cur === 5 ? 'View Report' : 'Continue') + ' &#8594;</button>';
+    }
+  }
+  return '<div class="navb">' + back + '<div style="text-align:right">' + warn + next + '</div></div>';
+}
+
+function renderBusiness() {
+  var html = '<div class="card sw">';
+  html += '<div class="stitle">Business profile</div>';
+  html += '<div class="ssub">Establishes the economic context the IRS uses to benchmark compensation relative to company size, industry, and geography.</div>';
+  html += '<div class="inote"><strong>Why this matters:</strong> Revenue, headcount, and location directly affect which wage benchmarks apply. A sole preparer at $200K is benchmarked very differently than a managing partner running a $2M firm.</div>';
+  html += '<div class="r2">';
+  var nameAmber = !d.biz.name ? ' style="border-color:#f59e0b;background:#fffbeb"' : '';
+  html += '<div class="fg"><div class="fl">Owner / shareholder name <span style="color:#dc2626">*</span></div><input' + nameAmber + ' type="text" value="' + (d.biz.name||'') + '" oninput="d.biz.name=this.value;as()" placeholder="Full legal name as it appears on W-2"></div>';
+  html += '<div class="fg"><div class="fl">EIN (Employer Identification Number)</div><div class="fh">Ties this report to the specific tax return entity</div><input type="text" value="' + (d.biz.ein||'') + '" oninput="d.biz.ein=this.value;as()" placeholder="e.g. 12-3456789"></div>';
+  html += '</div>';
+  html += '<div class="r2">';
+  var biznameAmber = !d.biz.bizname ? ' style="border-color:#f59e0b;background:#fffbeb"' : '';
+  html += '<div class="fg"><div class="fl">Business name (legal entity name) <span style="color:#dc2626">*</span></div><input' + biznameAmber + ' type="text" value="' + (d.biz.bizname||'') + '" oninput="d.biz.bizname=this.value;as()" placeholder="e.g. ABC Inc."></div>';
+  html += '<div class="fg"><div class="fl">Tax year <span class="bdg birs">IRS factor</span></div><div class="fh">The tax year this compensation analysis covers. This report is valid for one year from the date it is prepared.</div>';
+  html += '<select style="max-width:120px" onchange="d.biz.taxyear=this.value;as()">';
+  var selTY = d.biz.taxyear || '2026';
+  for (var ty = 2026; ty >= 2016; ty--) {
+    html += '<option value="' + ty + '"' + (String(ty) === String(selTY) ? ' selected' : '') + '>' + ty + '</option>';
+  }
+  html += '</select></div>';
+  html += '</div>';
+  html += '<div class="fg"><div class="fl">Business address</div><input type="text" value="' + (d.biz.address||'') + '" oninput="d.biz.address=this.value;as()" placeholder="e.g. 123 Main St, Suite 100, San Jose, CA 95101"></div>';
+  html += '<div class="r2">';
+  html += '<div class="fg"><div class="fl">Industry <span style="color:#dc2626">*</span> <span class="bdg birs">IRS factor</span></div>';
+  var indAmber = !d.biz.industry ? ' style="border-color:#f59e0b;background:#fffbeb"' : '';
+  html += '<select' + indAmber + ' onchange="d.biz.industry=this.value;d.roles.sel=[];d.roles.custom=[];d.time={};as()">';
+  html += '<option value=""' + (!d.biz.industry ? ' selected' : '') + '>-- Select industry --</option>';
+  for (var ii = 0; ii < INDUSTRIES.length; ii++) {
+    html += '<option' + (INDUSTRIES[ii] === d.biz.industry ? ' selected' : '') + '>' + INDUSTRIES[ii] + '</option>';
+  }
+  html += '</select></div>';
+  html += '<div class="fg"><div class="fl">Entity type <span style="color:#dc2626">*</span></div>' + makeSelect(d.biz.entity, ENTITIES, 'd.biz.entity=this.value;as()', '-- Select entity type --') + '</div>';
+  html += '</div>';
+  html += '<div class="r2">';
+  html += '<div class="fg"><div class="fl">Annual gross revenue</div><div class="fh">Most recent completed tax year</div><input type="text" value="' + (d.biz.revenue||'') + '" oninput="d.biz.revenue=this.value;as()" placeholder="e.g. $850,000"></div>';
+  html += '<div class="fg"><div class="fl">Number of employees <span class="bdg birs">IRS factor</span></div><div class="fh">Including the owner</div><input type="number" value="' + (d.biz.employees||'') + '" oninput="d.biz.employees=this.value;as()" placeholder="e.g. 4" min="1"></div>';
+  html += '</div>';
+  html += '<div class="fg"><div class="fl">Net profit (before owner comp) <span class="bdg birs">IRS factor</span></div><div class="fh">Enter the business net profit for the tax year before the owner takes a salary. If the business cannot support the full market-rate comp, the indicated amount will be capped at 70% of this figure — which is IRS-recognized and properly documented in the report. Enter 0 or leave blank only if the business has no net profit.</div><input type="text" value="' + (d.biz.netprofit||'') + '" oninput="d.biz.netprofit=this.value;as()" placeholder="e.g. $95,000"></div>';
+  html += '<div class="fg"><div class="fl">Geographic market <span style="color:#dc2626">*</span> <span class="bdg birs">IRS factor</span></div><div class="fh">BLS wages vary significantly by metro area. Choose where the business primarily operates.</div>' + makeGeoSelect() + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderRoles() {
+  var ar = allRoles();
+  var ind = d.biz.industry || 'Other';
+  var industryRoleIds = getIndustryRoles(ind);
+  var html = '<div class="card sw">';
+  html += '<div class="stitle">Owner roles and duties</div>';
+  html += '<div class="ssub">Roles shown are tailored to <strong>' + ind + '</strong>. Select every function you personally perform — the IRS benchmarks each one separately.</div>';
+  html += '<div class="inote"><strong>IRS scrutiny point:</strong> Using only one title like "Owner" or "CEO" for someone who also handles production, staff, and admin is the most common weakness in compensation reports. The more roles you document, the stronger your support.</div>';
+  html += '<div class="rgrid">';
+  for (var i = 0; i < industryRoleIds.length; i++) {
+    var rid = industryRoleIds[i];
+    var label = getRoleLabel(rid, ind);
+    var isSel = d.roles.sel.indexOf(rid) >= 0;
+    html += '<div class="rc' + (isSel ? ' sel' : '') + '" onclick="togR(\'' + rid + '\')">';
+    html += '<div class="rck">' + (isSel ? '&#10003;' : '') + '</div>';
+    html += '<span>' + label + '</span></div>';
+  }
+  html += '</div>';
+  html += '<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #e2e8f0">';
+  html += '<div class="fl" style="margin-bottom:8px;font-size:13px">Add a role specific to your business</div>';
+  html += '<div class="crr"><input type="text" id="cri" placeholder="e.g. ' + getCustomRolePlaceholder(ind) + '"><button class="addb" onclick="addCustomRole()">Add role</button></div>';
+  for (var i = 0; i < d.roles.custom.length; i++) {
+    html += '<div style="font-size:13px;padding:6px 0;display:flex;justify-content:space-between;border-bottom:1px solid #e2e8f0">';
+    html += '<span style="color:#0f172a">&#10003; ' + d.roles.custom[i] + '</span>';
+    html += '<span onclick="remCustom(' + i + ')" style="cursor:pointer;color:#64748b;font-size:12px">remove</span></div>';
+  }
+  html += '</div>';
+  if (ar.length > 0) {
+    html += '<div style="margin-top:1rem;font-size:13px;color:#64748b">' + ar.length + ' role' + (ar.length !== 1 ? 's' : '') + ' selected — next: allocate time across each one</div>';
+  } else {
+    html += '<div style="margin-top:1rem;font-size:13px;color:#d97706">Select at least one role to continue.</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function getCustomRolePlaceholder(ind) {
+  var map = {
+    'Restaurant / Food Service': 'Bartender/Bar Manager, Pastry Chef',
+    'Medical / Dental': 'Dental Hygienist duties, Lab Technician',
+    'Real Estate': 'Property Manager, Escrow Coordinator',
+    'Construction': 'Safety Officer, Equipment Operator',
+    'Legal': 'Paralegal duties, Mediator',
+    'Technology / Software': 'DevOps, Data Science',
+    'Accounting / Tax Services': 'Payroll Processing, CFO Advisory'
+  };
+  return map[ind] || 'Add a role specific to your business';
+}
+
+function renderTime() {
+  var ar = allRoles();
+  var t = Math.round(totPct());
+  var totClass = t === 100 ? 'ok' : t > 100 ? 'over' : 'under';
+  var totMsg = t === 100 ? 'Allocations total 100% — perfect' : t > 100 ? 'Over by ' + (t-100) + '% — reduce to reach 100%' : (100-t) + '% unallocated — must reach exactly 100%';
+  var html = '<div class="card sw">';
+  html += '<div class="stitle">Time allocation by role</div>';
+  html += '<div class="ssub">Estimate the percentage of total work time spent in each role. Must total exactly 100% — this drives the weighted compensation calculation.</div>';
+  var timeExample = INDUSTRY_TIME_EXAMPLE[d.biz.industry] || INDUSTRY_TIME_EXAMPLE['Other'];
+  html += '<div class="inote"><strong>IRS factor:</strong> Time devoted to each function is explicitly listed in IRS guidance. ' + timeExample + '</div>';
+  html += '<div class="r2" style="margin-bottom:1.25rem">';
+  html += '<div class="fg"><div class="fl">Avg hours per week (all roles)</div><div class="fh">Used to pro-rate full-time benchmarks if under 40 hrs/wk</div><input type="number" value="' + (d.quals.hrs||'') + '" oninput="d.quals.hrs=this.value;as()" placeholder="e.g. 45" min="1" max="80"></div>';
+  html += '<div class="fg"><div class="fl">Weeks worked per year</div><div class="fh">Seasonal businesses: adjust for off-season</div><input type="number" value="' + (d.quals.wks||'') + '" oninput="d.quals.wks=this.value;as()" placeholder="e.g. 48" min="1" max="52"></div>';
+  html += '</div>';
+  for (var i = 0; i < ar.length; i++) {
+    var rid = ar[i];
+    var r = getRole(rid);
+    var v = parseFloat(d.time[rid]) || 0;
+    html += '<div class="trow">';
+    html += '<div><div class="trn">' + (r ? getRoleLabel(r.id, d.biz.industry) : rid) + '</div>';
+    if (r) html += '<div class="trb">BLS benchmark: ' + r.bls + '</div>';
+    html += '</div>';
+    html += '<input type="range" min="0" max="100" step="5" value="' + v + '" oninput="updSlider(\'' + rid + '\',this.value)">';
+    html += '<div class="trp" id="pct_' + rid + '">' + Math.round(v) + '%</div>';
+    html += '</div>';
+  }
+  html += '<div class="totbar"><div style="font-size:13px;color:#64748b" id="totm">' + totMsg + '</div><div class="totn ' + totClass + '" id="totd">' + t + '%</div></div>';
+  html += '</div>';
+  return html;
+}
+
+function renderQuals() {
+  var html = '<div class="card sw">';
+  html += '<div class="stitle">Owner qualifications and background</div>';
+  html += '<div class="ssub">These fields determine the percentile used in the calculation. Education and experience directly affect the dollar amount. The remaining fields are supporting narrative for audit defense.</div>';
+  html += '<div class="inote"><strong>What moves the number:</strong> The percentile you select in the next step is the single lever that adjusts the final figure for owner qualifications. Experience, education, and credentials all inform <em>which</em> percentile is most defensible — so document them accurately here. The fields below strengthen your audit narrative without changing the calculation directly.</div>';
+
+  // Fields that affect calculation
+  html += '<div class="r2">';
+  html += '<div class="fg"><div class="fl">Education <span style="color:#dc2626">*</span> <span class="bdg birs">affects calculation</span></div>' + makeSelect(d.quals.edu, EDUS, 'd.quals.edu=this.value;as()', '-- Select education level --') + '</div>';
+  html += '<div class="fg"><div class="fl">Years of experience <span style="color:#dc2626">*</span> <span class="bdg birs">affects calculation</span></div>' + makeExpSelect() + '</div>';
+  html += '</div>';
+  html += '<div class="fg"><div class="fl">Licenses and credentials <span class="bdg birs">IRS factor</span></div><div class="fh">List all active credentials: CPA, EA, JD, MD, PE, CCIM, RN, Series 65, etc.</div><input type="text" value="' + (d.quals.creds||'') + '" oninput="d.quals.creds=this.value;as()" placeholder="e.g. CPA, JD, RN"></div>';
+
+  // Collapsible comp-limiting factors section
+  html += '<details style="margin-top:0.5rem"><summary style="cursor:pointer;font-size:13px;font-weight:600;color:#1a4a8a;padding:8px 0;list-style:none">&#43; Add factors that limit or reduce indicated compensation (optional — use to justify lower comp)</summary>';
+  html += '<div style="padding-top:1rem;border-top:1px solid #e2e8f0;margin-top:0.5rem">';
+  html += '<div style="font-size:12px;color:#64748b;background:#f0fdf4;border-left:3px solid #16a34a;padding:0.65rem 0.9rem;border-radius:0 6px 6px 0;margin-bottom:1rem;line-height:1.6">';
+  html += '<strong style="color:#166534">Goal: document reasons comp should be at or below median.</strong> The lower end of reasonable comp is defensible and minimizes payroll tax. Use these fields to note factors that limit the market rate — limited hours, shared duties, thin margins, no credentials, early-stage business, or a role that could be filled by a lower-cost hire.</div>';
+  html += '<div class="fg"><div class="fl">Factors limiting compensation</div>';
+  html += '<div class="fh">Document anything that supports median or below: part-time hours, no credentials, duties shared with others, business is early-stage, owner is semi-retired, role could be outsourced cheaply, etc.</div>';
+  html += '<textarea oninput="d.quals.spec=this.value;as()" placeholder="e.g. Owner works approximately 25 hours/week due to shared duties with a part-time bookkeeper. No CPA or EA credential. Business has been operating less than 3 years. Production duties are limited to review only, not preparation. A qualified replacement could be hired at or below the local median wage for this role.">' + (d.quals.spec||'') + '</textarea></div>';
+  html += '<div class="r2">';
+  html += '<div class="fg"><div class="fl">Staff supervised</div><div class="fh">0 = no management premium applies</div><input type="number" value="' + (d.quals.sup||'0') + '" oninput="d.quals.sup=this.value;as()" placeholder="0" min="0"></div>';
+  html += '<div class="fg"><div class="fl">Revenue dependency on owner</div>' + makeSelect(d.quals.bob, ['Owner is not the primary revenue driver','Owner shares revenue generation with others','Owner is the primary revenue driver — hard to replace'], 'd.quals.bob=this.value;as()') + '</div>';
+  html += '</div>';
+  html += '<div class="fg"><div class="fl">Additional limiting context</div>';
+  html += '<div class="fh">Any other facts supporting median or below: seasonal business, geographic discount, shared responsibilities, comparable staff paid less, limited scope of duties.</div>';
+  html += '<textarea oninput="d.quals.rep=this.value;as()" placeholder="e.g. The business operates seasonally (Jan-Apr peak). Owner responsibilities during off-season are minimal and could be handled part-time. Two non-owner staff perform similar duties at $38K/year each. A replacement for this role in this market could realistically be hired at $52,000-$65,000.">' + (d.quals.rep||'') + '</textarea></div>';
+  html += '</div></details>';
+  html += '</div>';
+  return html;
+}
+
+function renderMarket() {
+  var blsCount = Object.keys(d.mkt.bls || {}).length;
+  var html = '<div class="card sw">';
+  html += '<div class="stitle">Market data</div>';
+  html += '<div class="ssub">BLS wage data is fetched automatically for your roles and location. Review the live data below, then select the percentile that best matches this owner\'s profile.</div>';
+  html += '<div class="inote"><strong>Data source:</strong> BLS OEWS (Bureau of Labor Statistics Occupational Employment and Wage Statistics) — the primary source the IRS recognizes for reasonable compensation analysis.</div>';
+
+  // BLS data panel - no key input, auto-fetch
+  html += '<div class="blsp">';
+  html += '<div class="blsh"><div class="blst">BLS OEWS live wage data</div>';
+  if (blsCount > 0) {
+    html += '<span class="blss tg">Live data loaded</span>';
+  } else {
+    html += '<span class="blss" id="blss">Click to fetch</span>';
+  }
+  html += '</div>';
+  if (blsCount === 0) {
+    html += '<button class="blsb" onclick="fetchBLS()" style="margin-bottom:0.75rem">Fetch live BLS data for my roles</button>';
+  } else {
+    html += '<button class="blsb" onclick="fetchBLS()" style="margin-bottom:0.75rem;background:#64748b">Refresh BLS data</button>';
+  }
+  html += '<div id="blsr"></div></div>';
+
+  // Percentile selection - with clear note about what it does
+  html += '<div class="fg" style="margin-top:1.25rem">';
+  html += '<div class="fl">Percentile selection <span style="color:#dc2626">*</span> <span class="bdg birs">affects calculation</span></div>';
+  html += '<div class="fh">Select where this owner falls in the labor market. Each percentile is a multiplier on the median wage — <strong>25th = x0.82</strong>, <strong>50th = x1.0</strong>, <strong>75th = x1.18</strong>, <strong>90th = x1.35</strong>. Your credentials, experience, and duties determine which tier fits.</div>';
+
+  // Industry-specific percentile examples — full range with low-comp framing
+  var ind = d.biz.industry || 'Other';
+  var indExamples = {
+    'Accounting / Tax Services': {
+      p25: 'Seasonal only, no EA/CPA, simple W-2 returns, part-time hours, easily replaced. → Supports 25th.',
+      p50: 'EA or CPA, 5-15 yrs, standard mix of returns, no staff, typical owner-operator. → Median.',
+      p75: 'EA/CPA 15+ yrs, supervises staff, manages $300K+ book, handles complex returns. → Above median.',
+      p90: 'CPA/JD/EA, 20+ yrs, $500K+ personal revenue, niche specialist. → Top range only if clearly justified.'
+    },
+    'Legal': {
+      p25: 'Solo attorney, routine matters, under 5 yrs, limited clients, no staff. → Supports 25th.',
+      p50: 'Attorney, 8-15 yrs, general practice, moderate caseload. → Median.',
+      p75: 'Specialty attorney, 15+ yrs, manages associates, significant origination. → Above median.',
+      p90: 'Partner-level, top credentials, major book of business. → Top range only if clearly justified.'
+    },
+    'Medical / Dental': {
+      p25: 'Part-time clinician, limited scope, associate or supervised setting. → Supports 25th.',
+      p50: 'Full-time GP, standard credentials, average patient volume. → Median.',
+      p75: 'Specialist or practice owner, above-average volume, manages staff. → Above median.',
+      p90: 'Subspecialist, high volume, strong referral network. → Top range only if clearly justified.'
+    },
+    'Real Estate': {
+      p25: 'Part-time or early-career agent, low volume, no team. → Supports 25th.',
+      p50: 'Full-time agent/broker, consistent moderate production. → Median.',
+      p75: 'Top producer, team leader, strong referrals, 10+ yrs. → Above median.',
+      p90: 'High-volume broker-owner, multiple agents, dominant market presence. → Top range only if clearly justified.'
+    },
+    'Restaurant / Food Service': {
+      p25: 'Small or part-time cafe/food truck owner, seasonal, no culinary credentials. → Supports 25th.',
+      p50: 'Full-time restaurant owner, daily ops, kitchen oversight, basic management. → Median.',
+      p75: 'Multi-location or catering revenue, manages salaried staff. → Above median.',
+      p90: 'Chef-owner with recognized brand, multiple locations. → Top range only if clearly justified.'
+    },
+    'Construction': {
+      p25: 'Owner doing mostly labor, limited management, sub-contractor level. → Supports 25th.',
+      p50: 'GC running a small crew, estimating and field supervision. → Median.',
+      p75: 'Licensed GC, multiple active projects, project managers below. → Above median.',
+      p90: 'Large contractor, PE license, significant bonded capacity. → Top range only if clearly justified.'
+    },
+    'Technology / Software': {
+      p25: 'Freelance developer or early-stage founder, limited revenue. → Supports 25th.',
+      p50: 'Founder-operator, live product, handles both technical and business functions. → Median.',
+      p75: 'Technical founder with a team, consistent revenue, specialized expertise. → Above median.',
+      p90: 'Serial founder or recognized tech leader, large team, significant ARR. → Top range only if clearly justified.'
+    },
+    'Retail': {
+      p25: 'Small shop, part-time, simple inventory, no staff. → Supports 25th.',
+      p50: 'Full-time owner managing daily retail ops, 1-3 employees. → Median.',
+      p75: 'Multi-location, purchasing responsibility, managed staff. → Above median.',
+      p90: 'Significant retail operation, brand recognition, multiple locations. → Top range only if clearly justified.'
+    },
+    'Agriculture / Farming': {
+      p25: 'Small farm, seasonal only, limited acreage, primarily manual labor, no employees. → Supports 25th.',
+      p50: 'Full-time farm owner, manages production cycle, 1-5 employees, moderate revenue. → Median.',
+      p75: 'Established farm operation, multiple revenue streams (crops, livestock, direct sales), manages hired labor. → Above median.',
+      p90: 'Large-scale commercial operation, multiple employees, significant capital management, diversified revenue. → Top range only if clearly justified.'
+    },
+    'Auto Services / Repair': {
+      p25: 'Working tech-owner, no certifications, small shop, minimal staff, routine repairs only. → Supports 25th.',
+      p50: 'ASE-certified or equivalent, manages shop operations and 1-3 techs, handles diagnostics and customer service. → Median.',
+      p75: 'Multi-bay shop, supervises team of technicians, handles specialty work, strong local reputation. → Above median.',
+      p90: 'Multi-location or dealer-level operation, certified specialists, strong revenue per bay. → Top range only if clearly justified.'
+    },
+    'Business / Professional Services': {
+      p25: 'Generalist with limited credentials, low client volume, easily replaceable services. → Supports 25th.',
+      p50: 'Established professional, steady client base, delivers core services independently, moderate complexity. → Median.',
+      p75: 'Recognized specialist, manages staff or contractors, retainer-based clients, above-average complexity. → Above median.',
+      p90: 'Niche expert, high-value clients, personally drives most revenue, strong reputation in market. → Top range only if clearly justified.'
+    },
+    'Childcare / Education': {
+      p25: 'Small home-based or part-time program, minimal credentials, limited enrollment. → Supports 25th.',
+      p50: 'Licensed center, owner provides direct care or instruction, manages a small staff. → Median.',
+      p75: 'Established center, owner manages curriculum and operations, multiple staff, strong enrollment. → Above median.',
+      p90: 'Multi-site or specialized program (special needs, Montessori, etc.), owner recognized in community, significant organizational role. → Top range only if clearly justified.'
+    },
+    'Home Services / Repair': {
+      p25: 'Solo owner-operator, unlicensed or limited license, basic repairs, no employees. → Supports 25th.',
+      p50: 'Licensed trade owner, manages 1-3 employees, handles estimates and fieldwork, solid local reputation. → Median.',
+      p75: 'Licensed and insured, manages a crew, handles complex projects, consistent revenue. → Above median.',
+      p90: 'Multi-crew operation, licensed in multiple trades or states, significant project management role. → Top range only if clearly justified.'
+    },
+    'Landscaping / Gardening': {
+      p25: 'Solo mowing/maintenance owner, no design credentials, seasonal, no employees. → Supports 25th.',
+      p50: 'Full-service landscape owner, manages 1-3 employees, handles estimates, installs, and maintenance contracts. → Median.',
+      p75: 'Design-build operation, manages multiple crews, handles commercial accounts, landscape license or certification. → Above median.',
+      p90: 'Multi-crew commercial landscaper, licensed designer, significant contract revenue. → Top range only if clearly justified.'
+    },
+    'Personal Services (Salons / Spas)': {
+      p25: 'Chair-renter or solo stylist-owner, part-time hours, no staff, basic services only. → Supports 25th.',
+      p50: 'Full-service salon/spa owner, manages 2-4 staff, handles clients and operations. → Median.',
+      p75: 'Established brand, manages full staff, premium services, strong retail and repeat clientele. → Above median.',
+      p90: 'Multi-location or high-volume spa, owner is the brand, manages significant team and revenue. → Top range only if clearly justified.'
+    },
+    'Wholesale / Distribution': {
+      p25: 'Small distributor, owner handles most tasks personally, limited accounts, low complexity. → Supports 25th.',
+      p50: 'Established wholesale operation, manages warehouse/logistics staff, handles key accounts. → Median.',
+      p75: 'Multi-product or multi-territory distributor, manages a team, significant vendor and customer relationships. → Above median.',
+      p90: 'Large-scale distribution with multiple departments, owner manages executives, complex supply chain. → Top range only if clearly justified.'
+    }
+  };
+  var ex = indExamples[ind] || {
+    p25: 'Limited hours, routine duties, no specialized credentials, role could be outsourced cheaply. → Supports 25th.',
+    p50: 'Full-time, standard credentials, typical owner-operator profile for this industry. → Median.',
+    p75: 'Above-average credentials, supervises staff, niche expertise, not easily replaced. → Above median.',
+    p90: 'Top credentials, personally generates most revenue, manages a team, recognized in market. → Top range only if clearly justified.'
+  };
+
+  html += '<div style="font-size:12px;background:#f0fdf4;border-left:3px solid #16a34a;padding:0.65rem 0.9rem;border-radius:0 6px 6px 0;color:#166534;margin-bottom:0.75rem;line-height:1.6">';
+  html += '<strong>Strategy note:</strong> Most small S-Corp owners are best served by the 25th or 50th percentile. The lower the defensible comp, the lower the payroll tax burden — as long as it is supported by facts. Only go above median if the owner&#39;s credentials and duties clearly justify it.</div>';
+  var expRec = '';
+  var expVal = d.quals.exp;
+  var eduVal = d.quals.edu || '';
+  var hasAdv = (eduVal.indexOf('MBA') >= 0 || eduVal.indexOf('PhD') >= 0 || eduVal.indexOf('JD') >= 0 || eduVal.indexOf('MD') >= 0);
+  if (expVal === '0-5 years')   expRec = 'Based on 0-5 years of experience, the <strong>25th or 50th percentile</strong> is typically appropriate.';
+  else if (expVal === '6-10 years')  expRec = 'Based on 6-10 years of experience, the <strong>50th percentile</strong> is typically a solid fit.';
+  else if (expVal === '11-15 years') expRec = 'Based on 11-15 years of experience, the <strong>50th or 75th percentile</strong> is typically appropriate.';
+  else if (expVal === '16-20 years') expRec = 'Based on 16-20 years of experience, the <strong>75th percentile</strong> is typically well-supported.';
+  else if (expVal === '21+ years')   expRec = 'Based on 21+ years of experience, the <strong>75th or 90th percentile</strong> may be appropriate if duties and credentials align.';
+  if (expRec && hasAdv) expRec += ' Your advanced degree further supports the higher end of this range.';
+  if (expRec) {
+    html += '<div style="font-size:12px;background:#eff6ff;border-left:3px solid #2563eb;padding:0.65rem 0.9rem;border-radius:0 6px 6px 0;color:#1e3a5f;margin-bottom:0.75rem;line-height:1.6">';
+    html += '<strong>Percentile guidance based on your qualifications:</strong> ' + expRec + ' This is a starting point — review the profiles below and the duty narrative to confirm the best fit.</div>';
+  }
+  if (!d.mkt.pct) {
+    html += '<div style="font-size:12px;font-weight:600;color:#92400e;background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:0.75rem">&#9888; Required: Select a percentile below to continue.</div>';
+  }
+  html += '<div class="pcts">';
+  var pctOpts = [
+    {id:'p25', t:'25th percentile — x0.82', ex: ex.p25},
+    {id:'p50', t:'50th percentile (median) — x1.0', ex: ex.p50},
+    {id:'p75', t:'75th percentile — x1.18', ex: ex.p75},
+    {id:'p90', t:'90th percentile — x1.35', ex: ex.p90}
+  ];
+  for (var i = 0; i < pctOpts.length; i++) {
+    var po = pctOpts[i];
+    var isAct = d.mkt.pct === po.id;
+    html += '<div class="pco' + (isAct ? ' act' : '') + '" onclick="setPct(\'' + po.id + '\')" style="' + (isAct ? 'border-width:2px;' : '') + '">';
+    html += '<div class="pcot">' + po.t + '</div>';
+    html += '<div class="pcod" style="margin-top:4px">' + po.ex + '</div></div>';
+  }
+  html += '</div></div>';
+
+  // Guided percentile rationale — fill-in-the-blank walkthrough
+  html += '<div style="margin-top:1.25rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem">';
+  html += '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Why does this owner fit the ' + (PCTL[d.mkt.pct]||d.mkt.pct) + '?</div>';
+  html += '<div style="font-size:12px;color:#64748b;margin-bottom:1rem;line-height:1.5">Answer the questions below. The rationale paragraph for your report will be built automatically from your answers.</div>';
+
+  var q = d.mkt.qq || {};
+
+  html += '<div class="fg"><div class="fl" style="font-size:13px">1. How many hours per week does the owner work? <span style="font-weight:400;color:#64748b">(e.g. 40, 25, 50+)</span></div>';
+  html += '<input type="text" value="' + (q.hrs||d.quals.hrs||'') + '" oninput="d.mkt.qq=d.mkt.qq||{};d.mkt.qq.hrs=this.value;buildRat();as()" placeholder="e.g. 40 hours/week year-round"></div>';
+
+  html += '<div class="fg"><div class="fl" style="font-size:13px">2. What credentials or licenses does the owner hold? <span style="font-weight:400;color:#64748b">(or &quot;none&quot;)</span></div>';
+  html += '<input type="text" value="' + (q.creds||d.quals.creds||'') + '" oninput="d.mkt.qq=d.mkt.qq||{};d.mkt.qq.creds=this.value;buildRat();as()" placeholder="e.g. Enrolled Agent (EA), or: No professional license"></div>';
+
+  html += '<div class="fg"><div class="fl" style="font-size:13px">3. Could a qualified replacement be hired for this role in your market? <span style="font-weight:400;color:#64748b">(and at what cost?)</span></div>';
+  html += '<input type="text" value="' + (q.replace||'') + '" oninput="d.mkt.qq=d.mkt.qq||{};d.mkt.qq.replace=this.value;buildRat();as()" placeholder="e.g. Yes, a qualified replacement could be hired at $55,000-$65,000 locally"></div>';
+
+  html += '<div class="fg"><div class="fl" style="font-size:13px">4. What limits this owner&#39;s compensation? <span style="font-weight:400;color:#64748b">(pick all that apply, or describe)</span></div>';
+  var limits = ['Part-time or seasonal hours','No professional credential','Duties are shared with staff','Business is early-stage or low-revenue','Role does not require specialized expertise','Owner is semi-retired or stepping back'];
+  var selLimits = q.limits || [];
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">';
+  for (var li = 0; li < limits.length; li++) {
+    var isLimSel = selLimits.indexOf(limits[li]) >= 0;
+    html += '<div onclick="toggleLimit(\'' + limits[li].replace(/'/g,"\'\'") + '\')" style="font-size:12px;padding:5px 10px;border-radius:20px;cursor:pointer;user-select:none;border:1px solid ' + (isLimSel ? '#1a4a8a' : '#cbd5e1') + ';background:' + (isLimSel ? '#eff6ff' : '#fff') + ';color:' + (isLimSel ? '#1a4a8a' : '#64748b') + '">' + limits[li] + '</div>';
+  }
+  html += '</div>';
+  html += '<input type="text" value="' + (q.limitsOther||'') + '" oninput="d.mkt.qq=d.mkt.qq||{};d.mkt.qq.limitsOther=this.value;buildRat();as()" placeholder="Other limiting factor (optional)"></div>';
+
+  html += '<div class="fg"><div class="fl" style="font-size:13px">5. Is the owner personally responsible for generating most of the revenue?</div>';
+  var revOpts = ['No — revenue would continue without the owner','Partially — owner contributes but others also produce','Yes — most revenue depends on the owner personally'];
+  var revDefault = 'Yes \u2014 most revenue depends on the owner personally';
+  html += '<select onchange="d.mkt.qq=d.mkt.qq||{};d.mkt.qq.rev=this.value;buildRat();as()">';
+  for (var ri = 0; ri < revOpts.length; ri++) {
+    var revSel = (q.rev ? q.rev === revOpts[ri] : revOpts[ri] === revDefault) ? ' selected' : '';
+    html += '<option' + revSel + '>' + revOpts[ri] + '</option>';
+  }
+  html += '</select></div>';
+
+  // Auto-assembled rationale preview
+  html += '<div style="margin-top:0.75rem">';
+  html += '<div style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:6px">Rationale paragraph (auto-assembled — edit if needed):</div>';
+  var assembled = d.mkt.rat || '';
+  if (!assembled) assembled = buildRatNow(d.mkt.pct, d.biz.industry, d.mkt.qq||{});
+  html += '<textarea id="rat-preview" style="width:100%;font-size:12px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;height:100px;resize:vertical" oninput="d.mkt.rat=this.value;as()">' + assembled + '</textarea>';
+  html += '<div style="font-size:11px;color:#94a3b8;margin-top:4px">This paragraph goes into your PDF report and is what an IRS auditor reads. Edit directly if needed.</div>';
+  html += '</div></div>';
+
+  // Optional comparison fields
+  html += '<details style="margin-top:0.5rem"><summary style="cursor:pointer;font-size:13px;font-weight:600;color:#1a4a8a;padding:8px 0;list-style:none">&#43; Add current W-2 and distributions for ratio analysis (optional)</summary>';
+  html += '<div style="padding-top:1rem;border-top:1px solid #e2e8f0;margin-top:0.5rem">';
+  html += '<div style="font-size:12px;color:#64748b;margin-bottom:0.75rem;line-height:1.6">These fields <strong>do not change</strong> the indicated compensation amount. They are used only to flag a wages-to-distributions ratio warning and to populate the financial comparison in your report.</div>';
+  html += '<div class="r2">';
+  html += '<div class="fg"><div class="fl">Current W-2 wages paid this year <span style="font-size:11px;color:#64748b;font-weight:400">(owner only — not total payroll)</span></div><input type="text" value="' + (d.comp.w2||'') + '" oninput="d.comp.w2=this.value;as()" placeholder="e.g. $45,000"></div>';
+  html += '<div class="fg"><div class="fl">Total owner distributions</div><input type="text" value="' + (d.comp.dist||'') + '" oninput="d.comp.dist=this.value;as()" placeholder="e.g. $180,000"></div>';
+  html += '</div>';
+  html += '</div></details>';
+  html += '</div>';
+  return html;
+}
+
+function toggleLimit(lbl) {
+  d.mkt.qq = d.mkt.qq || {};
+  d.mkt.qq.limits = d.mkt.qq.limits || [];
+  var idx = d.mkt.qq.limits.indexOf(lbl);
+  if (idx >= 0) d.mkt.qq.limits.splice(idx, 1);
+  else d.mkt.qq.limits.push(lbl);
+  buildRat();
+  as();
+  var sy = window.scrollY;
+  render();
+  window.scrollTo(0, sy);
+}
+
+function buildRatNow(pct, ind, qq) {
+  var name = ind || 'this industry';
+  var hrs = (qq.hrs || '').trim();
+  var creds = (qq.creds || '').trim();
+  var replace = (qq.replace || '').trim();
+  var limits = qq.limits || [];
+  var limitsOther = (qq.limitsOther || '').trim();
+  var rev = qq.rev || '';
+
+  var pctLabel = {p25:'25th percentile', p50:'50th percentile (median)', p75:'75th percentile', p90:'90th percentile'}[pct] || pct;
+
+  var sentences = [];
+
+  // Opening sentence
+  sentences.push('The ' + pctLabel + ' is appropriate for this owner operating in ' + name + '.');
+
+  // Hours
+  if (hrs) sentences.push('The owner works approximately ' + hrs + ' hours per week, which is consistent with the duties and compensation level at this percentile.');
+
+  // Credentials
+  if (creds) {
+    var noCredPhrases = ['none','no license','no credential','no professional','not licensed','no cpa','no ea','no jd'];
+    var hasNoCred = noCredPhrases.some(function(p) { return creds.toLowerCase().indexOf(p) >= 0; });
+    if (hasNoCred) sentences.push('The owner does not hold a professional license or credential, which supports placement at or below the median.');
+    else sentences.push('The owner holds the following credentials: ' + creds + '.');
+  }
+
+  // Limiting factors
+  var allLimits = limits.slice();
+  if (limitsOther) allLimits.push(limitsOther);
+  if (allLimits.length > 0) {
+    sentences.push('Factors supporting this percentile include: ' + allLimits.join('; ') + '.');
+  }
+
+  // Replaceability
+  if (replace) sentences.push('A qualified replacement for this role in this market: ' + replace + '.');
+
+  // Revenue dependency
+  if (rev && rev.indexOf('No') === 0) {
+    sentences.push('The business would continue to generate revenue without the owner in this specific role, which limits the compensation premium.');
+  } else if (rev && rev.indexOf('Yes') === 0) {
+    sentences.push('The owner is personally responsible for generating most business revenue, which is a factor supporting this placement.');
+  }
+
+  // Closing for low percentiles
+  if (pct === 'p25' || pct === 'p50') {
+    sentences.push('Based on these facts, a wage at or near the ' + pctLabel + ' is both reasonable and defensible under IRS facts-and-circumstances analysis.');
+  }
+
+  return sentences.join(' ');
+}
+
+function buildRat() {
+  var assembled = buildRatNow(d.mkt.pct, d.biz.industry, d.mkt.qq||{});
+  d.mkt.rat = assembled;
+  var el = document.getElementById('rat-preview');
+  if (el) el.value = assembled;
+}
+
+function getRatPlaceholder(pct, ind) {
+  var name = ind || 'this industry';
+  if (pct === 'p25') return 'e.g. The 25th percentile is appropriate because the owner works part-time (approx. 20-25 hours/week), does not hold a professional credential, handles routine duties only, and a qualified replacement could be hired in this market for less than the median wage. The duties performed do not require specialized expertise that would command above-market pay.';
+  if (pct === 'p50') return 'e.g. The 50th percentile is appropriate because the owner operates in a standard capacity consistent with a typical small-business owner in ' + name + '. Credentials and experience are average for the role. Duties are routine and do not include specialized advisory, significant management responsibility, or client development that would justify above-median placement.';
+  if (pct === 'p75') return 'e.g. The 75th percentile is appropriate because the owner holds advanced credentials, has 15+ years of experience in ' + name + ', personally supervises staff, and manages a significant client base. The owner&#39;s departure would materially harm revenue, and a qualified replacement would require above-median compensation to attract.';
+  if (pct === 'p90') return 'e.g. The 90th percentile is applied only because the owner is a credentialed specialist with 20+ years in ' + name + ', is personally responsible for substantially all business revenue, manages a team, and has a market reputation that makes replacement extremely difficult. This percentile is selected with documented support and not applied routinely.';
+  return "Explain why this percentile is appropriate. For 25th or 50th, describe what limits the comp. For 75th or 90th, describe what credentials and duties justify the premium.";
+}
+
+function renderCalc() {
+  var ar = allRoles();
+  var g = getGeoAdj();
+  var e = EXP[d.quals.exp] || 1;
+  var p = PCT[d.mkt.pct] || 1;
+  var comp = calcComp();
+  var mktRate = marketComp();
+  var netProfit = parseInt((d.biz.netprofit || '0').replace(/\D/g,'')) || 0;
+  var affordable = netProfit > 0 ? Math.round(netProfit * 0.70) : 0;
+  var isCapped = netProfit > 0 && affordable < mktRate;
+  var w2 = parseInt((d.comp.w2||'0').replace(/\D/g,'')) || 0;
+  var ds = parseInt((d.comp.dist||'0').replace(/\D/g,'')) || 0;
+  var gap = comp - w2;
+  var rat = ds > 0 ? (w2 / (w2 + ds) * 100) : null;
+  var gapTag = '';
+  if (w2 > 0) {
+    if (gap > 5000) gapTag = '<span class="tr">W-2 deficiency: ' + fm(gap) + '</span>';
+    else if (gap < -5000) gapTag = '<span class="tw">W-2 exceeds indicated</span>';
+    else gapTag = '<span class="tg">W-2 within range</span>';
+  }
+  var html = '<div class="card sw">';
+  html += '<div class="stitle">Compensation calculation</div>';
+  html += '<div class="ssub">Full multi-role weighted calculation with every adjustment factor shown transparently.</div>';
+
+  if (isCapped) {
+    html += '<div style="background:#fef3c7;border:1px solid #d97706;border-radius:12px;padding:1.25rem;margin-bottom:1rem">';
+    html += '<div style="font-size:12px;font-weight:700;color:#78350f;margin-bottom:10px">Affordability cap applied — business profit limits the indicated amount</div>';
+    html += '<div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:center">';
+    html += '<div><div style="font-size:11px;color:#78350f">Market-based rate</div><div style="font-size:22px;font-weight:700;color:#78350f;text-decoration:line-through">' + fm(mktRate) + '</div></div>';
+    html += '<div style="font-size:20px;color:#78350f">&#8594;</div>';
+    html += '<div><div style="font-size:11px;color:#92400e">Indicated (70% of ' + fm(netProfit) + ' net profit)</div><div style="font-size:32px;font-weight:700;color:#92400e">' + fm(comp) + '</div></div>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:#78350f;margin-top:10px;line-height:1.6">The market rate exceeds what this business can currently support. Indicated comp is capped at 70% of net profit. Document both numbers — the market rate establishes what is <em>reasonable</em>, the capped amount reflects what the business can <em>afford</em> to pay this year. The IRS accepts this approach when documented.</div>';
+    html += '</div>';
+  } else {
+    html += '<div class="chi"><div class="chl">Indicated reasonable W-2 compensation</div><div class="cha">' + fm(comp) + '</div>';
+    if (netProfit > 0) html += '<div class="chl" style="margin-top:4px">Business can support up to ' + fm(affordable) + ' (70% of ' + fm(netProfit) + ' net profit) — no cap needed</div>';
+    html += '<div class="chl" style="margin-top:6px">' + (gapTag || '') + '</div></div>';
+  }
+  html += '<div style="overflow-x:auto"><table class="btbl" style="margin-bottom:1rem">';
+  html += '<thead><tr><th>Role</th><th>BLS benchmark</th><th>Base median</th><th>Time %</th><th>Weighted</th></tr></thead><tbody>';
+  for (var i = 0; i < ar.length; i++) {
+    var rid = ar[i];
+    var r = getRole(rid) || {label:rid, bls:'Custom', occ:'', mm:85000};
+    var pt = (parseFloat(d.time[rid]) || 0) / 100;
+    var bk = (r.occ || '') + '_' + d.biz.location;
+    var bd = d.mkt.bls && d.mkt.bls[bk];
+    var m = bd && bd.med ? bd.med : (r.mm || 85000);
+    var liveBadge = bd ? '<span class="tg" style="margin-left:6px;font-size:10px">live</span>' : '';
+    html += '<tr><td style="font-weight:600">' + (r.label||rid) + '</td>';
+    html += '<td style="color:#64748b">' + r.bls + liveBadge + '</td>';
+    html += '<td>' + fm(m) + '</td>';
+    html += '<td>' + Math.round(pt*100) + '%</td>';
+    html += '<td style="font-weight:700;color:#1a4a8a">' + fm(m*pt) + '</td></tr>';
+  }
+  html += '</tbody></table></div>';
+  html += '<div class="calcbox">';
+  html += '<div style="font-weight:700;margin-bottom:10px;color:#0f172a;font-size:13px">Adjustment factors applied</div>';
+  html += '<div class="sr"><span style="color:#64748b">Geographic market (' + getLocationLabel() + ')</span><span class="sv">x ' + g.toFixed(2) + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Percentile (' + (PCTL[d.mkt.pct]||d.mkt.pct) + ' — reflects owner qualifications)</span><span class="sv">x ' + p.toFixed(2) + '</span></div>';
+  var hrs = parseFloat(d.quals.hrs) || 40;
+  if (hrs < 40) html += '<div class="sr"><span style="color:#64748b">Hours adjustment (' + d.quals.hrs + ' hrs/wk)</span><span class="sv">x ' + (hrs/40).toFixed(2) + '</span></div>';
+  html += '<div style="border-top:1px solid #e2e8f0;margin-top:10px;padding-top:10px" class="sr"><span style="font-weight:700;color:#0f172a">Indicated reasonable compensation</span><span style="font-size:16px;font-weight:700;color:#1a4a8a">' + fm(comp) + '</span></div>';
+  html += '</div>';
+  if (w2 > 0 && ds > 0 && rat !== null) {
+    var ratClass = rat < 40 ? 'tr' : rat < 55 ? 'tw' : 'tg';
+    html += '<div style="margin-top:1rem;padding:1rem;border:1px solid #e2e8f0;border-radius:8px">';
+    html += '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#0f172a">Wages-to-distributions ratio analysis</div>';
+    html += '<div class="sr"><span style="color:#64748b">Current W-2 wages</span><span class="sv">' + fm(w2) + '</span></div>';
+    html += '<div class="sr"><span style="color:#64748b">S-Corp distributions</span><span class="sv">' + fm(ds) + '</span></div>';
+    html += '<div class="sr"><span style="color:#64748b">Total owner compensation</span><span class="sv">' + fm(w2+ds) + '</span></div>';
+    html += '<div class="sr"><span style="color:#64748b">Wages as % of total</span><span class="sv"><span class="' + ratClass + '">' + Math.round(rat) + '%</span></span></div>';
+    if (rat < 40) {
+      var minSafe = Math.round((w2 + ds) * 0.40);
+      html += '<div style="font-size:12px;color:#991b1b;margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;line-height:1.8">';
+      html += '<div style="font-weight:700;margin-bottom:6px">&#9888; IRS Audit Risk: Wages-to-distributions ratio is below 40%</div>';
+      html += 'At ' + Math.round(rat) + '%, this owner&#39;s W-2 is too low relative to total compensation. The IRS may reclassify distributions as wages, triggering back payroll taxes, interest, and penalties.';
+      html += '<div style="margin-top:10px;font-weight:700;color:#7f1d1d">How to fix this:</div>';
+      html += '<div style="margin-top:6px;padding:8px 10px;background:#fff0f0;border-radius:6px">';
+      html += 'Increase W-2 to <strong>' + fm(comp) + '</strong> — the indicated reasonable compensation from this analysis. ';
+      html += 'Paying the full indicated amount eliminates both the ratio risk and the compensation shortfall. This is the strongest IRS position available.';
+      html += '</div>';
+      html += '<div style="margin-top:8px;color:#7f1d1d;font-style:italic">Before year-end: run a bonus or corrective payroll to close the gap. After year-end, the opportunity to fix is gone for that tax year.</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderReport() {
+  var comp = calcComp();
+  var mkt = marketComp();
+  var ar = allRoles();
+  var blsCount = Object.keys(d.mkt.bls || {}).length;
+  var netProfit = parseInt((d.biz.netprofit||'0').replace(/\D/g,''))||0;
+  var affordable = netProfit > 0 ? Math.round(netProfit * 0.70) : 0;
+  var isCapped = netProfit > 0 && affordable < mkt;
+  var w2 = parseInt((d.comp.w2||'0').replace(/\D/g,''))||0;
+  var dist = parseInt((d.comp.dist||'0').replace(/\D/g,''))||0;
+
+  var html = '<div class="card sw">';
+  html += '<div class="stitle">Report summary and export</div>';
+  html += '<div class="ssub">Complete the two fillable sections below, then export as PDF. Attach the four required exhibits listed at the bottom.</div>';
+
+  // Indicated comp header
+  var rptDate = new Date();
+  var rptDateStr = rptDate.toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'});
+  var validThruDate = new Date(rptDate.getFullYear()+1, rptDate.getMonth(), rptDate.getDate());
+  var validThruStr = validThruDate.toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'});
+  html += '<div class="chi">';
+  html += '<div class="chl">Indicated reasonable W-2 compensation</div>';
+  html += '<div class="cha">' + fm(comp) + '</div>';
+  if (isCapped) html += '<div class="chl" style="margin-top:4px">Capped at 70% of net profit (market rate: ' + fm(mkt) + ')</div>';
+  html += '<div class="chl" style="margin-top:4px">Multi-role weighted &nbsp;|&nbsp; ' + getLocationLabel() + ' &nbsp;|&nbsp; ' + (PCTL[d.mkt.pct]||d.mkt.pct) + '</div>';
+  html += '</div>';
+
+  // Report metadata strip
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:1.25rem">';
+  var metaCells = [
+    {label:'Tax Year', val: d.biz.taxyear || '<span style="color:#f59e0b;font-style:italic">Not entered</span>'},
+    {label:'Prepared', val: rptDateStr},
+    {label:'Valid Through', val: validThruStr},
+    {label:'For', val: (d.biz.name || '') + (d.biz.bizname ? ' &mdash; ' + d.biz.bizname : '')}
+  ];
+  for (var mc = 0; mc < metaCells.length; mc++) {
+    var bdr = mc > 0 ? 'border-left:1px solid #e2e8f0;' : '';
+    html += '<div style="padding:10px 14px;background:#f8fafc;' + bdr + '">';
+    html += '<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">' + metaCells[mc].label + '</div>';
+    html += '<div style="font-size:12px;font-weight:600;color:#0f172a">' + metaCells[mc].val + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Annual renewal note
+  html += '<div style="font-size:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:0.75rem 1rem;color:#1e40af;line-height:1.6;margin-bottom:1.25rem">';
+  html += '<strong>&#128197; Annual review recommended</strong> &mdash; This report is valid through ' + validThruStr + '. ';
+  html += 'Reasonable compensation should be re-evaluated each year. Changes in owner duties, revenue, BLS wage data, or geographic market may affect the indicated figure.';
+  html += '</div>';
+
+  // Entity info summary
+  html += '<div class="ss"><div class="st">Entity information</div>';
+  html += '<div class="sr"><span style="color:#64748b">Business name</span><span class="sv">' + (d.biz.bizname||d.biz.name||'Not entered') + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">EIN</span><span class="sv">' + (d.biz.ein||'Not entered') + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Address</span><span class="sv">' + (d.biz.address||'Not entered') + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Owner / shareholder</span><span class="sv">' + (d.biz.name||'Not entered') + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Industry</span><span class="sv">' + d.biz.industry + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Entity type</span><span class="sv">' + d.biz.entity + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Employees</span><span class="sv">' + (d.biz.employees||'Not entered') + ' (supports management benchmarking)</span></div>';
+  html += '</div>';
+
+  // Financial summary — READ ONLY, pulled from earlier steps
+  html += '<div class="ss"><div class="st">Company financial summary</div>';
+  var fmRaw = function(v) {
+    if (!v) return '<em style="color:#94a3b8">not entered</em>';
+    var n = parseInt((v + '').replace(/\D/g, ''));
+    return (!isNaN(n) && n >= 0) ? fm(n) : v;
+  };
+  html += '<div class="sr"><span style="color:#64748b">Gross revenue</span><span class="sv">' + fmRaw(d.biz.revenue) + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Net profit (before owner comp)</span><span class="sv">' + fmRaw(d.biz.netprofit) + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Owner W-2 wages this year</span><span class="sv">' + fmRaw(d.comp.w2) + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Owner distributions this year</span><span class="sv">' + fmRaw(d.comp.dist) + '</span></div>';
+  if (w2 > 0 && dist > 0) {
+    var rat = w2 / (w2 + dist) * 100;
+    html += '<div style="font-size:12px;padding:8px 12px;border-radius:8px;margin-top:6px;background:' + (rat < 40 ? '#fee2e2' : '#f0fdf4') + ';color:' + (rat < 40 ? '#991b1b' : '#166534') + '">';
+    html += 'Wages are ' + Math.round(rat) + '% of total owner compensation (' + fm(w2+dist) + '). ';
+    if (rat < 40) html += 'Below 40% is a known IRS audit trigger.';
+    else html += 'Ratio is within acceptable range.';
+    html += '</div>';
+  }
+  if (!d.biz.revenue && !d.biz.netprofit) {
+    html += '<div style="font-size:12px;color:#d97706;margin-top:6px">Go back to Step 1 to enter financial figures — they are needed in the PDF report.</div>';
+  }
+  html += '</div>';
+
+  // Owner duty description — the ONE fillable field in the report
+  html += '<div class="ss"><div class="st">Written owner duty description <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:#dbeafe;color:#1e40af;margin-left:4px">only editable field</span></div>';
+  html += '<div style="font-size:12px;color:#64748b;margin-bottom:0.75rem;line-height:1.5">Write 3-5 sentences describing what this owner does day-to-day in plain English. The time allocation is shown automatically below. Together, these form the core of your IRS audit defense. Be specific about client types, staff managed, and key responsibilities.</div>';
+  html += '<textarea style="width:100%;font-size:13px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;height:120px;resize:vertical" oninput="d.rpt=d.rpt||{};d.rpt.dutyNarrative=this.value;as()" placeholder="e.g. As the sole owner-operator of a 3-person tax practice, I personally perform the following functions: (1) Tax preparation and review — I prepare and sign off on all complex business returns, S-Corp elections, and high-net-worth individual returns (approx. 50% of time). (2) Advisory and planning — I conduct annual tax planning meetings with 40+ business clients (20% of time). (3) Client relationship management — I am the primary point of contact for all A-tier clients (15% of time). (4) Staff supervision — I train, review work of, and manage two tax preparers (15% of time)...">' + ((d.rpt&&d.rpt.dutyNarrative)||'') + '</textarea>';
+  html += '<div style="margin-top:0.75rem">';
+  html += '<div class="fl" style="font-size:12px;color:#64748b;margin-bottom:6px">Time allocation summary (auto-filled from Step 3)</div>';
+  for (var i = 0; i < ar.length; i++) {
+    var r = getRole(ar[i]);
+    html += '<div class="sr" style="font-size:12px"><span style="color:#64748b">' + (r ? r.label : ar[i]) + '</span><span class="sv">' + Math.round(d.time[ar[i]]||0) + '% of work time</span></div>';
+  }
+  html += '</div></div>';
+
+  // Qualifications summary
+  html += '<div class="ss"><div class="st">Owner qualifications</div>';
+  html += '<div class="sr"><span style="color:#64748b">Education</span><span class="sv">' + d.quals.edu + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Credentials</span><span class="sv">' + (d.quals.creds||'None listed') + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Experience</span><span class="sv">' + d.quals.exp + '</span></div>';
+  if (d.quals.spec) html += '<div class="sr"><span style="color:#64748b">Specialty</span><span class="sv">' + d.quals.spec + '</span></div>';
+  html += '</div>';
+
+  // Percentile rationale
+  html += '<div class="ss"><div class="st">Market data and percentile rationale</div>';
+  html += '<div class="sr"><span style="color:#64748b">Percentile selected</span><span class="sv">' + (PCTL[d.mkt.pct]||d.mkt.pct) + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">Geographic market</span><span class="sv">' + getLocationLabel() + '</span></div>';
+  html += '<div class="sr"><span style="color:#64748b">BLS data</span><span class="sv">' + (blsCount > 0 ? '<span class="tg">Live BLS data used</span>' : '<span class="tw">Baseline estimates</span>') + '</span></div>';
+  if (d.mkt.rat) html += '<div style="margin-top:8px;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:#64748b;line-height:1.6;font-style:italic">"' + d.mkt.rat + '"</div>';
+  html += '</div>';
+
+  // Exhibits — plain English instructions for each
+  html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin-top:0.5rem">';
+  html += '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:0.25rem">4 documents to print and attach to this report</div>';
+  html += '<div style="font-size:12px;color:#64748b;margin-bottom:1.25rem">These documents are what an IRS auditor will ask to see. Print them, staple them behind this report, and keep the complete package in your files.</div>';
+
+  var exhibitDetails = [
+    {
+      num: '1',
+      title: 'BLS wage data printout',
+      what: 'This is a government wage table showing what people in your job title get paid in your city. The IRS uses this as the primary benchmark.',
+      how: 'Go to <a href="https://www.bls.gov/oes/current/oes_nat.htm" target="_blank" style="color:#2563eb">bls.gov/oes</a> → click your state or metro area → find each occupation title you selected → print or screenshot the wage table showing the 25th, median, and 75th percentile columns.',
+      badge: 'Required'
+    },
+    {
+      num: '2',
+      title: 'Compensation survey printout',
+      what: 'A second data source that confirms the BLS numbers. The IRS likes to see more than one source. RCReports is the most commonly accepted tool among tax professionals for this purpose.',
+      how: '<a href="https://rcreports.com" target="_blank" style="color:#2563eb">RCReports.com</a> charges a per-report fee (~$50-100) and produces a formatted report specifically designed for IRS reasonable comp. Alternatively, <a href="https://erieri.com" target="_blank" style="color:#2563eb">ERI (erieri.com)</a> or a free salary search from <a href="https://salary.com" target="_blank" style="color:#2563eb">Salary.com</a> can supplement the BLS data.',
+      badge: 'Strongly recommended'
+    },
+    {
+      num: '3',
+      title: 'Credential documentation',
+      what: 'A copy of each professional license or credential listed in this report. This proves the credentials are real and active.',
+      how: 'Print or save a PDF of your license lookup page from your state licensing board, the IRS EA verification page, bar association directory, etc. Include license number and expiration date.',
+      badge: 'If credentials listed'
+    },
+    {
+      num: '4',
+      title: 'Compensation agreement',
+      what: 'A signed document between the owner and the corporation stating the agreed salary. This shows the wage was set deliberately, not arbitrarily.',
+      how: 'This is a simple one-page document signed by the owner in their corporate officer role. Your corporate attorney or accountant can draft it, or use a template. It should state the annual salary, effective date, and be signed before the fiscal year ends.',
+      badge: 'Best practice'
+    }
+  ];
+
+  for (var ei = 0; ei < exhibitDetails.length; ei++) {
+    var ex = exhibitDetails[ei];
+    html += '<div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #e2e8f0">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+    html += '<div style="width:22px;height:22px;border-radius:50%;background:#1a4a8a;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + ex.num + '</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#0f172a">' + ex.title + '</div>';
+    html += '<div style="font-size:10px;padding:2px 8px;border-radius:10px;background:#dbeafe;color:#1e40af;font-weight:600">' + ex.badge + '</div>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:#0f172a;margin-bottom:4px;margin-left:30px"><strong>What it is:</strong> ' + ex.what + '</div>';
+    html += '<div style="font-size:12px;color:#64748b;margin-left:30px"><strong>How to get it:</strong> ' + ex.how + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:1.25rem">';
+  html += '<button id="pdfbtn" class="pdfb" onclick="exportPDF()">Export PDF report</button>';
+  html += '</div></div>';
+  return html;
+}
+
+function render() {
+  renderProgress();
+  var id = STEP_IDS[cur];
+  var content = '';
+  if (id === 'business') content = renderBusiness();
+  else if (id === 'roles')  content = renderRoles();
+  else if (id === 'time')   content = renderTime();
+  else if (id === 'quals')  content = renderQuals();
+  else if (id === 'market') content = renderMarket();
+  else if (id === 'calc')   content = renderCalc();
+  else if (id === 'report') content = renderReport();
+  document.getElementById('sc').innerHTML = content + navBtns();
+  if (id === 'market') renderBLS();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+loadSaved();
+render();
+</script>
+</body>
+</html>
