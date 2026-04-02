@@ -814,7 +814,7 @@ async function fetchBLS() {
     var r = getRole(rid);
     if (!r) continue;
     var area = AREAS[d.biz.location] || '0000000';
-    var sid = 'OEUS' + area + r.occ + '05';
+    var sid = 'OEUS' + area + r.occ.replace('-', '') + '05';
     ids.push(sid);
     map[sid] = {rid: rid, r: r};
   }
