@@ -814,7 +814,7 @@ async function fetchBLS() {
     var r = getRole(rid);
     if (!r) continue;
     var area = AREAS[d.biz.location] || '0000000';
-    var sid = 'OEUS' + area + r.occ.replace('-', '') + '05';
+    var sid = 'OEUS' + area + '000000' + r.occ.replace('-', '') + '03';
     ids.push(sid);
     map[sid] = {rid: rid, r: r};
   }
@@ -826,7 +826,7 @@ async function fetchBLS() {
     });
     var json = await res.json();
     if (json.status === 'REQUEST_SUCCEEDED' || json.status === 'REQUEST_SUCCEEDED_WITH_MESSAGE') {
-      var nb = JSON.parse(JSON.stringify(d.mkt.bls));
+      var nb = d.mkt.bls ? JSON.parse(JSON.stringify(d.mkt.bls)) : {};
       var series = json.Results.series;
       for (var i = 0; i < series.length; i++) {
         var s = series[i];
