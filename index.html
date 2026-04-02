@@ -877,7 +877,7 @@ function renderBLS() {
       html += '</div></div>';
     }
   }
-  el.innerHTML = any ? html : '<div style="font-size:12px;color:#64748b;padding:0.5rem 0">No live data yet. Paste your BLS API key above and click Fetch Data.<br><span style="font-size:11px;color:#94a3b8">Note: BLS live fetch requires a hosted URL — baseline estimates are active below.</span></div>';
+  el.innerHTML = html;
 }
 
 function exportPDF() {
